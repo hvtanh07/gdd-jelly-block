@@ -640,16 +640,16 @@ const DEMOS={
         `<g class="lk">${bottle(36,124,BW,7,0)}<g class="cv">${lockB(36,124,BW)}</g>${badge(62,124,['2','1','0'],'lc')}</g>`+
         `<g class="b0">${bottle(89,74,BW,2,0)}</g><g class="b1">${bottle(89,124,BW,4,0)}</g>`+
         `<g class="c0">${bottle(142,74,BW,3,0)}</g><g class="c1">${bottle(142,124,BW,6,0)}</g>`+
-        tapN(0,47,92)+tapN(1,100,92)+tapN(2,153,92)+tapN(3,47,92);},
+        tapN(0,47,92)+tapN(1,100,92)+tapN(2,153,92)+tapN(3,47,142);},
     tracks:()=>[
-      ['.lc','opacity',[[0,0],[1.6,0],[1.8,1],[4.25,1],[4.5,0]]],
+      ['.lc','opacity',[[0,0],[1.4,0],[1.6,1],[4.25,1],[4.5,0]]],
       ...tapNTracks(0,.3),['.a0','transform',[[.55,T(0,0)],[1.1,T(-16,-62)]]],
       ...tapNTracks(1,2.0),['.b0','transform',[[2.25,T(0,0)],[2.8,T(-23,-62)]]],
       ...tapNTracks(2,3.3),['.c0','transform',[[3.55,T(0,0)],[4.1,T(-30,-62)]]],
-      ['.b1','transform',[[2.85,T(0,0)],[3.2,T(0,-50)]]],['.c1','transform',[[4.15,T(0,0)],[4.5,T(0,-50)]]],
+      ['.b1','opacity',[[0,.55],[2.8,.55],[3.1,1]]],['.c1','opacity',[[0,.55],[4.1,.55],[4.4,1]]],
       ...steps('lc',[2.8,4.1]),
       ['.cv','opacity',[[0,1],[4.25,1],[4.6,0]]],
-      ...tapNTracks(3,5.0),['.lk','transform',[[1.15,T(0,0)],[1.5,T(0,-50)],[5.25,T(0,-50)],[5.8,T(122,-112)]]]
+      ...tapNTracks(3,5.0),['.lk','transform',[[5.25,T(0,0)],[5.8,T(122,-112)]]],['.lk','opacity',[[0,.55],[1.1,.55],[1.4,1]]]
     ]},
   blockedTube:{D:8.6, /* two bottles go up, the counter hits 0, the tubes swap: left closes, right opens */
     svg:()=>{const A={x:36,y:4,w:32,n:8,p:7},B={x:132,y:4,w:32,n:8,p:7},[ax,ay]=spotXY(A,BW),[bx,by]=spotXY(B,BW);
@@ -707,13 +707,13 @@ const DEMOS={
     svg:()=>{const X=[36,89,142],Y=[62,110,158],g=[[1,2,3],[4,5,7],[6,8,1]];
       let s='';
       g.forEach((row,r)=>row.forEach((c,k)=>{s+=r===0?`<g class="f-${k}">${bottle(X[k],Y[r],BW,c,0)}</g>`:'';}));
-      return s+`<g class="rest">${[1,2].map(r=>g[r].map((c,k)=>bottle(X[k],Y[r],BW,c,0)).join('')).join('')}${lockB(142,110,BW)}</g>`+
+      return s+`<g class="lay2">${g[1].map((c,k)=>bottle(X[k],Y[1],BW,c,0)).join('')}${lockB(142,110,BW)}</g><g style="opacity:.55">${g[2].map((c,k)=>bottle(X[k],Y[2],BW,c,0)).join('')}</g>`+
         bbtn(100,24,`<path d="M93 17l14 14M107 17l-14 14" style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round"/>`)+
         tapN(0,100,24)+X.map((x,k)=>puffN(k,x+11,Y[0]+18)).join('');},
     tracks:()=>[
       ...tapNTracks(0,.6),...btnTracks(.6),
       ...[0,1,2].flatMap(k=>[[`.f-${k}`,'transform',[[1.0+k*.15,'scale(1)'],[1.15+k*.15,'scale(1.12)'],[1.4+k*.15,'scale(.2)']]],[`.f-${k}`,'opacity',[[0,1],[1.25+k*.15,1],[1.4+k*.15,0]]],...puffNTracks(k,1.2+k*.15)]),
-      ['.rest','transform',[[2.4,T(0,0)],[2.9,T(0,-48)]]]
+      ['.lay2','opacity',[[0,.55],[1.6,.55],[1.9,1]]]
     ]}
 };
 
@@ -738,8 +738,8 @@ function fieldSVG(label){
     const b=bottle(HX[k],HY[r],HBW,c,0,k===0&&r===0?'hs':'');
     if(k===0&&r===0)board+=`<g class="h-b">${b}</g>`;
   }));
-  board+=`<g class="h-q">${bottle(HX[0],HY[1],HBW,7,0)+bottle(HX[0],HY[2],HBW,2,0)}</g>`+
-    [1,2,3].map(k=>grid[k].map((c,r)=>bottle(HX[k],HY[r],HBW,c,0)).join('')).join('');
+  board+=`<g class="h-q" style="opacity:.55">${bottle(HX[0],HY[1],HBW,7,0)}</g><g style="opacity:.55">${bottle(HX[0],HY[2],HBW,2,0)}</g>`+
+    [1,2,3].map(k=>grid[k].map((c,r)=>r?`<g style="opacity:.55">${bottle(HX[k],HY[r],HBW,c,0)}</g>`:bottle(HX[k],HY[r],HBW,c,0)).join('')).join('');
   const elems=jset(B,4,'?')+lid(C)+badge(C.x+C.w+8,C.y+C.n*C.p-6,['3','2'],'hc')+lockB(HX[2],HY[1],HBW);
   return `<svg viewBox="0 0 340 466" role="img" aria-label="${esc(label)}"><g class="hscene">
     <g class="part part-A">${tubes}${pin(18,24,'A')}</g>
@@ -760,7 +760,7 @@ function heroTracks(){
     ['.h-b','transform',[[1.0,T(0,0)],[1.6,T(dx,dy)],...leaveMove(dx,dy,3.2)]],
     ['.h-b','opacity',[[0,1],[3.5,1],[3.7,0]]],
     ...pour('hr','hs',1.8,.3),...puffNTracks('h',3.45),
-    ['.h-q','transform',[[1.8,T(0,0)],[2.3,T(0,-50)]]],
+    ['.h-q','opacity',[[0,.55],[1.6,.55],[1.9,1]]],
     ['.h-rest','transform',[[3.9,T(0,0)],[4.5,T(0,44)]]],
     ...steps('hc',[1.6])
   ];
@@ -870,11 +870,17 @@ function view(l){
       [t('Lose','Thua'),t(`The waiting tray is full and no bottle the player can tap matches the bottom jam of an open tube. The check runs once every pour has finished. The revive offer shows first.`,`Khay chờ đã đầy và không còn chai nào người chơi chạm được khớp với jam ở đáy một ống đang mở. Chỉ kiểm tra sau khi mọi lượt rót đã xong. Lựa chọn hồi sinh hiện trước.`)]
     ]))+
     ent(t('Source and assumptions','Nguồn và giả định'),ul([
-      t(`Core gameplay comes from the ${vid}. The video could not be played from the writing tool, so the rules here are built from its title (“Bottle Fill Jam”), the genre and the element and booster brief.`,`Core gameplay lấy từ ${vid}. Công cụ viết tài liệu không mở được video, nên luật chơi ở đây dựng từ tên video (“Bottle Fill Jam”), thể loại game và mô tả element, booster được giao.`),
-      t(`Assumptions to check against the video:`,`Các giả định cần đối chiếu lại với video:`)+ol([
+      t(`Core gameplay comes from the ${vid}. The video could not be played from the writing tool, so the rules are built from a gameplay screenshot of an early level, the video title (“Bottle Fill Jam”) and the element and booster brief.`,`Core gameplay lấy từ ${vid}. Công cụ viết tài liệu không mở được video, nên luật chơi dựng từ một screenshot gameplay ở màn đầu, tên video (“Bottle Fill Jam”) và mô tả element, booster được giao.`),
+      t(`Seen in the screenshot:`,`Thấy được trong screenshot:`)+ol([
+        t(`A machine at the top holds 2 tall tubes, like syringes. Each tube holds layers of colored liquid (red, blue) and pours from its bottom nozzle into the container under it.`,`Máy ở phía trên có 2 ống cao giống ống tiêm. Mỗi ống chứa các lớp chất lỏng màu (đỏ, xanh) và rót từ vòi ở đáy xuống vật chứa bên dưới.`),
+        t(`The containers stand in a pile on the board (red and blue soda cans). Cans higher in the pile rest on the ones below.`,`Vật chứa nằm thành một đống trên bàn chơi (lon nước ngọt đỏ và xanh). Lon ở trên đè lên lon bên dưới.`),
+        t(`A single waiting slot sits between the machine and the pile in that level.`,`Ở màn đó chỉ có 1 ô chờ nằm giữa máy và đống lon.`),
+        t(`The caption “Now there are two of them” introduces the 2nd tube, so early levels start with 1 tube.`,`Chú thích “Now there are two of them” giới thiệu ống thứ 2, nên các màn đầu bắt đầu với 1 ống.`)
+      ]),
+      t(`Still assumed, to check against the video:`,`Vẫn là giả định, cần đối chiếu với video:`)+ol([
         t(`A bottle holds 4 portions of jam. Jam sits in the tubes in sets of 4 portions of one color, so 1 set fills 1 bottle (from the ${P.bo2} brief: “the bottom 4 jam”).`,`Mỗi chai chứa 4 phần jam. Jam trong ống xếp thành từng bộ 4 phần cùng màu, 1 bộ rót đầy 1 chai (suy ra từ mô tả ${P.bo2}: “4 jam dưới cùng”).`),
-        t(`The waiting tray starts with 4 slots (from the ${P.bo1} brief: +1, maximum 5).`,`Khay chờ bắt đầu với 4 ô (suy ra từ mô tả ${P.bo1}: +1, tối đa 5).`),
-        t(`Bottles stand in columns. Only the front bottle of each column can be tapped (from the ${P.bo3} brief: top bottles first, then lower ones).`,`Chai xếp thành từng cột. Chỉ chai đứng đầu mỗi cột chạm được (suy ra từ mô tả ${P.bo3}: chai trên cùng trước, rồi tới chai bên dưới).`),
+        t(`The number of tray slots at level start is set per level (1 in the screenshot). ${P.bo1} adds 1, up to 5 (from the brief).`,`Số ô khay chờ đầu màn đặt theo từng màn (screenshot có 1 ô). ${P.bo1} thêm 1, tối đa 5 (theo mô tả).`),
+        t(`Only a bottle with nothing resting on it can be tapped (the pile in the screenshot, and the ${P.bo3} brief: top bottles first, then lower ones).`,`Chỉ chai không bị chai khác đè lên mới chạm được (theo đống lon trong screenshot và mô tả ${P.bo3}: chai trên cùng trước, rồi tới chai bên dưới).`),
         t(`The game picks the tube for a sent bottle. The player does not drag it.`,`Game tự chọn ống cho chai được gửi lên. Người chơi không kéo chai.`),
         t(`Each tube has one fill spot under its nozzle.`,`Mỗi ống có 1 ô rót ngay dưới vòi.`)
       ])
@@ -882,7 +888,7 @@ function view(l){
 
   B['main-game-mechanics']=
     ent(nm('Jam tube','Ống jam'),ul([
-      t(`Glass tube at the top of the screen, holding a column of jam. Number of tubes per level: ${tbd}.`,`Ống thủy tinh ở phía trên màn hình, chứa một cột jam. Số ống mỗi màn: ${tbd}.`),
+      t(`Tall tube on the machine at the top of the screen, holding a column of jam in layers. Early levels have 1 tube; the 2nd tube is introduced soon after. Tubes per level: ${tbd}.`,`Ống cao gắn trên máy ở phía trên màn hình, chứa cột jam xếp thành lớp. Các màn đầu có 1 ống; ống thứ 2 được giới thiệu ngay sau đó. Số ống mỗi màn: ${tbd}.`),
       t(`Jam comes in sets of 4 portions of one color. The order of the sets is set per level.`,`Jam xếp thành từng bộ 4 phần cùng màu. Thứ tự các bộ đặt theo từng màn.`),
       t(`Only the bottom set, at the nozzle, can pour.`,`Chỉ bộ ở đáy, sát vòi, mới rót được.`),
       t(`When a set has poured, the whole column drops by one set. The next set is now at the bottom.`,`Khi một bộ rót xong, cả cột jam tụt xuống một bộ. Bộ kế tiếp thành bộ ở đáy.`),
@@ -894,8 +900,8 @@ function view(l){
       t(`While a bottle fills, the spot is busy. Another bottle of the same color goes to the tray and comes back after.`,`Khi đang rót, ô bận. Chai cùng màu khác vào khay chờ và quay lại sau.`)
     ]))+
     ent(nm('Bottle','Chai'),ul([
-      t(`Empty glass bottle. Its color shows on the cap and the outline. 8 colors.`,`Chai thủy tinh rỗng. Màu của chai hiện ở nắp và viền chai. 8 màu.`),
-      t(`Bottles stand on the board in columns. Only the front bottle of a column can be tapped. When it goes, the bottles behind move up one row.`,`Chai đứng trên bàn chơi theo từng cột. Chỉ chai đứng đầu cột chạm được. Khi chai đó đi, các chai phía sau tiến lên một hàng.`),
+      t(`Empty container (a soda can in the reference). Its color shows on the can, or on the cap and outline in the sketches. 8 colors.`,`Vật chứa rỗng (lon nước ngọt trong hình tham khảo). Màu hiện trên lon, hoặc ở nắp và viền trong các hình minh họa. 8 màu.`),
+      t(`Bottles lie in a pile on the board, in layers. A bottle is free when no bottle rests on it. Only free bottles can be tapped. When a bottle goes, the ones it was resting on may become free.`,`Chai nằm thành đống trên bàn chơi, theo nhiều lớp. Chai không bị chai nào đè lên là chai tự do. Chỉ chai tự do mới chạm được. Khi một chai đi, các chai nằm dưới nó có thể trở thành tự do.`),
       t(`Bottle layout and colors are set per level.`,`Vị trí và màu chai đặt theo từng màn.`),
       t(`When the player taps a bottle:`,`Khi người chơi chạm vào chai:`)+ol([
         t(`An open tube has the bottle’s color at the bottom and a free fill spot: the bottle goes there. Two tubes match: the left one.`,`Có ống đang mở với jam cùng màu ở đáy và ô rót còn trống: chai vào ô đó. Hai ống cùng khớp: chọn ống bên trái.`),
@@ -904,8 +910,8 @@ function view(l){
       ])
     ]))+
     ent(nm('Waiting tray','Khay chờ'),ul([
-      t(`Row of slots between the fill spots and the board. 4 slots at the start of a level.`,`Hàng ô nằm giữa các ô rót và bàn chơi. Đầu màn có 4 ô.`),
-      t(`Maximum 5 slots, with the ${P.bo1} booster or the RV Slot.`,`Tối đa 5 ô, nhờ công cụ ${P.bo1} hoặc ô quảng cáo thưởng.`),
+      t(`Row of slots between the machine and the board. Slots at level start: set per level (${tbd}); the early level in the screenshot has 1.`,`Hàng ô nằm giữa máy và bàn chơi. Số ô đầu màn: đặt theo từng màn (${tbd}); màn đầu trong screenshot có 1 ô.`),
+      t(`More slots come from the ${P.bo1} booster or the RV Slot. Maximum 5.`,`Có thêm ô nhờ công cụ ${P.bo1} hoặc ô quảng cáo thưởng. Tối đa 5 ô.`),
       t(`A bottle in the tray goes up on its own when its color reaches the bottom of an open tube and the fill spot is free. Several match: the leftmost bottle goes first.`,`Chai trong khay tự đi lên khi màu của nó xuống tới đáy một ống đang mở và ô rót trống. Nhiều chai cùng khớp: chai bên trái đi trước.`),
       t(`A full tray with no match ends the level (see Lose).`,`Khay đầy mà không chai nào khớp thì thua màn (xem mục Thua).`)
     ]));
@@ -1021,7 +1027,7 @@ function view(l){
       lead(t(`Watch a rewarded ad to get one extra slot in the level.`,
              `Xem quảng cáo có thưởng để có thêm 1 ô trong màn.`))+
       tiles([
-        ['4',t('Default slots (some special levels differ)','Số ô mặc định (trừ vài màn đặc biệt)')],
+        [t('Per level','Theo màn'),t('Slots at level start (1 in early levels)','Số ô đầu màn (màn đầu có 1 ô)')],
         ['5',t(`Maximum slots, shared with ${P.bo1}`,`Số ô tối đa, dùng chung với ${P.bo1}`)]
       ]))+
 
@@ -1070,11 +1076,11 @@ function view(l){
   /* one caption per entry in DEMOS, same keys */
   const DCAP={
     hiddenJam:t('Red fills and the column drops. The grey set reaches the bottom and shows green, so the green bottle can fill.','Rót xong chai đỏ, cột jam tụt xuống. Bộ xám xuống tới đáy và hiện màu xanh lá, chai xanh lá được rót.'),
-    lockedBottle:t('The front bottle goes. The locked bottle reaches the front and shows 2. Two more bottles go up, the lock opens and it can go.','Chai phía trước đi. Chai bị khóa lên đầu cột và hiện số 2. Gửi thêm 2 chai, khóa mở và chai được gửi lên.'),
+    lockedBottle:t('The bottle on top goes and the locked bottle is free: it shows 2. Two more bottles go up, the lock opens and it can go.','Chai đè bên trên đi, chai bị khóa được giải phóng và hiện số 2. Gửi thêm 2 chai, khóa mở và chai được gửi lên.'),
     blockedTube:t('Two bottles go up and the counter hits 0. The left tube closes, the right tube opens, and the counter starts again from 2.','Gửi 2 chai, bộ đếm về 0. Ống trái đóng, ống phải mở, bộ đếm bắt đầu lại từ 2.'),
     extraTray:t('The tray is full. The player taps the booster, a 5th slot opens and a bottle goes into it.','Khay đã đầy. Người chơi chạm vào công cụ, ô thứ 5 mở ra và một chai vào ô đó.'),
-    shuffle:t('No tube matches a front bottle. The jam mixes, red and yellow land at the bottom, and the red bottle fills.','Không ống nào khớp chai đứng đầu. Jam được xáo lại, đỏ và vàng xuống đáy, chai đỏ được rót.'),
-    remove:t('The player taps the booster. The 3 front bottles are removed. The locked bottle stays, since it comes last.','Người chơi chạm vào công cụ. 3 chai đứng đầu bị xóa. Chai bị khóa vẫn còn, vì nó xếp cuối cùng.')
+    shuffle:t('No tube matches a free bottle. The jam mixes, red and yellow land at the bottom, and the red bottle fills.','Không ống nào khớp chai tự do. Jam được xáo lại, đỏ và vàng xuống đáy, chai đỏ được rót.'),
+    remove:t('The player taps the booster. The 3 bottles on the top layer are removed. The locked bottle stays, since it comes last.','Người chơi chạm vào công cụ. 3 chai ở lớp trên cùng bị xóa. Chai bị khóa vẫn còn, vì nó xếp cuối cùng.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
   const demo=(k,c)=>{const cp=c||DCAP[k]||'';return DEMOS[k]?`<figure class="demo" data-demo="${k}"><div class="demo-box"><svg viewBox="0 0 200 196" role="img" aria-label="${esc(cp.replace(/<[^>]+>/g,''))}"><g class="scene">${DEMOS[k].svg()}</g></svg>`+
@@ -1095,11 +1101,11 @@ function view(l){
     ]),unl,demo('hiddenJam'))+
     ent(N.el2,ul([
       t(`A bottle on the board with a padlock. Its color shows, but it cannot be sent while locked. Tapped: it shakes.`,`Chai trên bàn chơi có ổ khóa. Vẫn thấy màu, nhưng không gửi lên được khi còn khóa. Chạm vào: chai rung nhẹ.`),
-      `<b>${t('Step 1: unblock','Bước 1: giải phóng')}.</b> `+t(`The bottles in front of it in its column must be sent first. No counter shows yet.`,`Phải gửi hết các chai đứng trước nó trong cột. Lúc này chưa hiện bộ đếm.`),
-      `<b>${t('Step 2: counter','Bước 2: bộ đếm')}.</b> `+t(`Once it is at the front, a counter shows on it: the number of bottles x the player must still send. x is set per level (${tbd}).`,`Khi chai lên đầu cột, bộ đếm hiện trên chai: số chai x người chơi cần gửi lên thêm. x đặt theo từng màn (${tbd}).`),
+      `<b>${t('Step 1: unblock','Bước 1: giải phóng')}.</b> `+t(`The bottles resting on it must be sent first. No counter shows yet.`,`Phải gửi hết các chai đang đè lên nó. Lúc này chưa hiện bộ đếm.`),
+      `<b>${t('Step 2: counter','Bước 2: bộ đếm')}.</b> `+t(`Once it is free, a counter shows on it: the number of bottles x the player must still send. x is set per level (${tbd}).`,`Khi chai đã tự do, bộ đếm hiện trên chai: số chai x người chơi cần gửi lên thêm. x đặt theo từng màn (${tbd}).`),
       sent,
       t(`At 0 the padlock opens. The bottle is a normal bottle from then on.`,`Về 0 thì ổ khóa mở. Từ lúc đó chai là chai thường.`),
-      t(`The bottles behind it stay blocked until it has been sent.`,`Các chai phía sau vẫn bị chặn cho tới khi chai này được gửi lên.`),
+      t(`The bottles under it stay blocked until it has been sent.`,`Các chai nằm dưới nó vẫn bị chặn cho tới khi chai này được gửi lên.`),
       fsLine(`the counter cannot reach 0 because too few bottles are left to send.`,`bộ đếm không thể về 0 vì còn quá ít chai để gửi.`)
     ]),unl,demo('lockedBottle'))+
     ent(N.el3,ul([
@@ -1124,13 +1130,13 @@ function view(l){
   B['booster-mechanics']=
     ent(N.bo1,ul([
       t(`Adds 1 slot to the waiting tray at once, for the rest of the level.`,`Thêm ngay 1 ô vào khay chờ, cho tới hết màn.`),
-      t(`The tray starts with 4 slots. The maximum is 5. At 5 the booster button is greyed out.`,`Khay bắt đầu với 4 ô. Tối đa 5 ô. Khi đủ 5 ô, nút công cụ bị làm mờ.`),
+      t(`The maximum is 5 slots. At 5 the booster button is greyed out.`,`Tối đa 5 ô. Khi đủ 5 ô, nút công cụ bị làm mờ.`),
       t(`The 5-slot cap is shared with the RV Slot: if an ad has already opened the 5th slot, this booster cannot be used.`,`Giới hạn 5 ô dùng chung với ô quảng cáo thưởng: nếu quảng cáo đã mở ô thứ 5 thì không dùng được công cụ này.`),
       t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
     ]),unlB,demo('extraTray'))+
     ent(N.bo2,ul([
       t(`Mixes the order of the jam sets in every tube.`,`Xáo trộn thứ tự các bộ jam trong mọi ống.`),
-      t(`Always ends with: the bottom set (the bottom 4 portions) of each open tube has the color of a bottle the player can send now, that is a front bottle on the board or a bottle in the tray.`,`Luôn đảm bảo: bộ ở đáy (4 phần jam dưới cùng) của mỗi ống đang mở cùng màu với một chai gửi lên được ngay, tức là chai đứng đầu cột trên bàn chơi hoặc chai trong khay chờ.`),
+      t(`Always ends with: the bottom set (the bottom 4 portions) of each open tube has the color of a bottle the player can send now, that is a free bottle on the board or a bottle in the tray.`,`Luôn đảm bảo: bộ ở đáy (4 phần jam dưới cùng) của mỗi ống đang mở cùng màu với một chai gửi lên được ngay, tức là chai tự do trên bàn chơi hoặc chai trong khay chờ.`),
       t(`Fewer of those colors than open tubes: as many open tubes as possible get a match, at least 1.`,`Số màu như vậy ít hơn số ống đang mở: càng nhiều ống khớp càng tốt, ít nhất 1 ống.`),
       t(`Each set keeps its 4 portions of one color, so a bottle always fills from one set.`,`Mỗi bộ giữ nguyên 4 phần cùng màu, nên chai luôn được rót từ một bộ.`),
       t(`After the shuffle, tray bottles that now match go up on their own.`,`Sau khi xáo, chai trong khay nay đã khớp sẽ tự đi lên.`),
@@ -1142,8 +1148,8 @@ function view(l){
     ]),unlB,demo('shuffle'))+
     ent(N.bo3,ul([
       t(`Removes 3 bottles from the board at once, picked at random in this order:`,`Xóa ngay 3 chai trên bàn chơi, chọn ngẫu nhiên theo thứ tự ưu tiên:`)+ol([
-        t(`Front bottles (the ones the player can tap now).`,`Chai đứng đầu cột (chai người chơi chạm được ngay).`),
-        t(`Bottles further back in the columns.`,`Chai ở phía sau trong các cột.`),
+        t(`Bottles on top of the pile (free, the ones the player can tap now).`,`Chai trên cùng của đống (chai tự do, người chơi chạm được ngay).`),
+        t(`Bottles in the lower layers.`,`Chai ở các lớp bên dưới.`),
         t(`Locked bottles, last.`,`Chai bị khóa, sau cùng.`)
       ]),
       t(`Within a group, the pick is random.`,`Trong cùng một nhóm, chọn ngẫu nhiên.`),
@@ -1230,8 +1236,8 @@ function view(l){
 
   /* ===== 3. Object set & animation ===== */
   B['game-concept']=`<p>${t(
-    `Glossy fruit jam poured into clear glass bottles. Tall glass tubes hang at the top like a jam dispenser; the bottles stand on a wooden pantry shelf below. Candy colors, soft light, a satisfying pour and a pop when the cap goes on. Reference: the ${vid}. Concept art link: ${tbd}.`,
-    `Jam trái cây bóng mượt được rót vào chai thủy tinh trong suốt. Các ống thủy tinh cao treo ở phía trên như máy rót jam; chai đứng trên kệ gỗ bên dưới. Màu kẹo tươi, ánh sáng dịu, cảm giác rót đã tay và tiếng “bốp” khi đóng nắp. Tham khảo: ${vid}. Link concept art: ${tbd}.`)}</p>`;
+    `A dark filling machine at the top with tall syringe-like tubes, pipes and valves; colored liquid in layers pours from the nozzles. Below, a pile of colored soda cans sits on a soft blue tray. Candy colors, soft light, a satisfying pour and a pop when the can is sealed. No real drink brands on the cans. Reference: the ${vid}. Concept art link: ${tbd}.`,
+    `Phía trên là máy rót màu tối với các ống cao giống ống tiêm, đường ống và van; chất lỏng màu xếp lớp chảy ra từ vòi. Bên dưới là đống lon nước ngọt nhiều màu trên khay xanh dịu. Màu kẹo tươi, ánh sáng dịu, cảm giác rót đã tay và tiếng “bốp” khi đóng lon. Không dùng thương hiệu nước uống thật trên lon. Tham khảo: ${vid}. Link concept art: ${tbd}.`)}</p>`;
 
   const colors=[t('Red','Đỏ'),t('Blue','Xanh dương'),t('Green','Xanh lá'),t('Yellow','Vàng'),t('Pink','Hồng'),t('Orange','Cam'),t('Purple','Tím'),t('Cyan','Xanh ngọc')];
   const anim=n=>t('Animation '+n,'Chuyển động '+n);
@@ -1240,26 +1246,26 @@ function view(l){
       `<p>${t(`Jam, bottle caps and bottle outlines share these 8 colors. Colors used per level: ${tbd}.`,`Jam, nắp chai và viền chai dùng chung 8 màu này. Số màu dùng mỗi màn: ${tbd}.`)}</p>
        <ol class="colors">${colors.map((c,i)=>`<li>${cap(i+1,i+1)}<span><span class="sr">${i+1}: </span>${c}</span></li>`).join('')}</ol>`)+
     ent(nm('Jam tube','Ống jam'),params([
-      [t('Look','Hình ảnh'),t('Clear glass tube, a metal nozzle at the bottom, jam in soft layers with a thin line between sets.','Ống thủy tinh trong, vòi kim loại ở đáy, jam xếp thành lớp mềm, có vạch mảnh giữa các bộ.')],
+      [t('Look','Hình ảnh'),t('Clear syringe-like tube on the machine, a nozzle at the bottom, liquid in color layers with a thin line between sets.','Ống trong suốt giống ống tiêm gắn trên máy, vòi ở đáy, chất lỏng xếp thành lớp màu, có vạch mảnh giữa các bộ.')],
       [anim(1),t('Pour: a jam stream runs from the nozzle into the bottle, one portion at a time.','Rót: dòng jam chảy từ vòi xuống chai, từng phần một.')],
       [anim(2),t('Set poured: the column slides down with a small wobble.','Rót xong một bộ: cột jam trượt xuống, hơi rung rinh.')]
     ]))+
     ent(nm('Bottle','Chai'),params([
-      [t('Look','Hình ảnh'),t('Empty glass bottle with a colored cap and a colored outline.','Chai thủy tinh rỗng, nắp màu và viền màu.')],
+      [t('Look','Hình ảnh'),t('Colored soda can (bottle in the sketches). Lower layers of the pile are slightly shaded.','Lon nước ngọt có màu (vẽ thành chai trong hình minh họa). Các lớp dưới của đống hơi tối hơn.')],
       [anim(1),t('Sent: hops in an arc to the fill spot or the tray.','Khi gửi: nhảy theo đường cong tới ô rót hoặc khay chờ.')],
       [anim(2),t('Filling: the jam level rises in 4 steps.','Khi rót: mức jam dâng lên theo 4 nấc.')],
       [anim(3),t('Full: the cap twists shut, the bottle bounces and flies off with sparkles.','Khi đầy: nắp xoay đóng, chai nảy lên rồi bay đi kèm lấp lánh.')],
       [anim(4),t('Cannot go (tray full or locked): a short shake.','Không đi được (khay đầy hoặc đang khóa): rung nhẹ.')]
     ]))+
     ent(nm('Waiting tray','Khay chờ'),params([
-      [t('Look','Hình ảnh'),t('A row of shallow wooden slots. The 5th slot shows a “+” until it opens.','Hàng ô gỗ nông. Ô thứ 5 có dấu “+” cho tới khi được mở.')],
+      [t('Look','Hình ảnh'),t('A row of small slots above the pile. A locked slot shows a “+” until it opens.','Hàng ô nhỏ phía trên đống lon. Ô đang khóa có dấu “+” cho tới khi được mở.')],
       [anim(1),t('Full tray: the slots flash red once.','Khay đầy: các ô nháy đỏ một lần.')]
     ]));
 
   const an=t('Animation','Chuyển động'),look=t('Look','Hình ảnh');
   B['element-object-concept']=
     ent(N.el1,params([[look,t('Grey jam portions with a white “?” across the set.','Các phần jam màu xám, dấu “?” trắng giữa bộ.')],[an,t('At the bottom, the grey melts away and the real color shows.','Xuống tới đáy, lớp xám tan đi và màu thật hiện ra.')]]))+
-    ent(N.el2,params([[look,t('Dark cover and a padlock over the bottle. At the front of its column, a counter badge shows on it.','Lớp phủ tối và ổ khóa trên chai. Khi lên đầu cột, huy hiệu bộ đếm hiện trên chai.')],[an,t('The number ticks down. At 0 the padlock springs open and drops away.','Con số giảm dần. Về 0 thì ổ khóa bật mở và rơi xuống.')]]))+
+    ent(N.el2,params([[look,t('Dark cover and a padlock over the bottle. Once nothing rests on it, a counter badge shows on it.','Lớp phủ tối và ổ khóa trên chai. Khi không còn chai nào đè lên, huy hiệu bộ đếm hiện trên chai.')],[an,t('The number ticks down. At 0 the padlock springs open and drops away.','Con số giảm dần. Về 0 thì ổ khóa bật mở và rơi xuống.')]]))+
     ent(N.el3,params([[look,t('A metal lid with a padlock under the closed tube’s nozzle. A counter badge sits beside the pair.','Nắp kim loại có ổ khóa dưới vòi ống đang đóng. Huy hiệu bộ đếm nằm cạnh cặp ống.')],[an,t('At 0 one lid slides shut and the other slides open.','Về 0 thì một nắp trượt đóng và nắp kia trượt mở.')]]));
 
   B['booster-object-concept']=
@@ -1536,15 +1542,16 @@ function view(l){
       ent(t('New document','Tài liệu mới'),ul([
         t(`Created this GDD from the template. Core gameplay from the ${vid}; the assumptions are listed in 1.1.`,`Tạo tài liệu này từ template. Core gameplay lấy từ ${vid}; các giả định ghi ở mục 1.1.`),
         t(`Added 3 elements (${P.el1}, ${P.el2}, ${P.el3}) and 3 boosters (${P.bo1}, ${P.bo2}, ${P.bo3}), each with a demo.`,`Thêm 3 yếu tố (${P.el1}, ${P.el2}, ${P.el3}) và 3 công cụ (${P.bo1}, ${P.bo2}, ${P.bo3}), mỗi mục có minh họa.`),
-        t(`Unlock levels and counter values are TBD until the config sheet is ready.`,`Màn mở khóa và giá trị bộ đếm để TBD cho tới khi có sheet config.`)
+        t(`Unlock levels and counter values are TBD until the config sheet is ready.`,`Màn mở khóa và giá trị bộ đếm để TBD cho tới khi có sheet config.`),
+        t(`Matched to the gameplay screenshot: syringe-like tubes on a machine, cans in a pile (free = nothing resting on it), tray size and tube count set per level.`,`Chỉnh theo screenshot gameplay: ống giống ống tiêm gắn trên máy, lon xếp thành đống (tự do = không bị đè), số ô khay và số ống đặt theo từng màn.`)
       ])));
 
   /* ----- hero ----- */
   const legend=[
     ['A',nm('Jam tubes','Ống jam'),t('Jam in sets of 4 portions. Only the bottom set pours.','Jam xếp thành bộ 4 phần. Chỉ bộ ở đáy được rót.')],
     ['B',nm('Fill spots','Ô rót'),t('One under each tube. A bottle of the matching color fills here.','Mỗi ống có 1 ô. Chai cùng màu được rót ở đây.')],
-    ['C',nm('Waiting tray','Khay chờ'),t(`4 slots, a 5th with ${P.bo1}. Full with no match: the level is lost.`,`4 ô, thêm ô thứ 5 nhờ ${P.bo1}. Đầy mà không khớp màu: thua màn.`)],
-    ['D',nm('Bottle board','Bàn chơi'),t('Columns of bottles. Only the front bottle can be tapped.','Các cột chai. Chỉ chai đứng đầu cột chạm được.')],
+    ['C',nm('Waiting tray','Khay chờ'),t(`Slots set per level, a 5th with ${P.bo1}. Full with no match: the level is lost.`,`Số ô đặt theo từng màn, thêm tới ô thứ 5 nhờ ${P.bo1}. Đầy mà không khớp màu: thua màn.`)],
+    ['D',nm('Bottle pile','Đống chai'),t('Bottles in layers. Shaded ones are covered; only free bottles can be tapped.','Chai xếp nhiều lớp. Chai bị tô tối đang bị đè; chỉ chai tự do mới chạm được.')],
     ['E',t('Elements','Yếu tố đặc biệt'),t(`${P.el1} (?), ${P.el3} (lid, 3 left) and a ${P.el2}.`,`${P.el1} (?), ${P.el3} (nắp, còn 3) và ${P.el2}.`)]
   ];
   const hero=`<div class="hero" id="top" data-sec="top" data-spy="top">
@@ -1556,10 +1563,10 @@ function view(l){
       <ul class="legend">${legend.map(g=>`<li><button type="button" data-part="${g[0]}" aria-pressed="false"><span class="pinl" data-nosearch>${g[0]}</span><span><b>${g[1]}</b><span class="d">${g[2]}</span></span></button></li>`).join('')}</ul>
     </div>
     <figure class="field${paused?' paused':''}" id="field">
-      <div class="field-box">${fieldSVG(t('Sketch of the play screen: three jam tubes on top with fill spots under them, a waiting tray of 4 slots plus a locked 5th, and four columns of bottles below. The red bottle goes up, fills with red jam and flies off.','Hình minh họa màn chơi: ba ống jam phía trên, dưới mỗi ống là ô rót, khay chờ 4 ô cùng ô thứ 5 đang khóa, và bốn cột chai bên dưới. Chai đỏ đi lên, được rót jam đỏ rồi bay đi.'))}</div>
+      <div class="field-box">${fieldSVG(t('Sketch of the play screen: three jam tubes on top with fill spots under them, a waiting tray of 4 slots plus a locked 5th, and a pile of bottles in layers below. The red bottle goes up, fills with red jam and flies off.','Hình minh họa màn chơi: ba ống jam phía trên, dưới mỗi ống là ô rót, khay chờ 4 ô cùng ô thứ 5 đang khóa, và đống chai nhiều lớp bên dưới. Chai đỏ đi lên, được rót jam đỏ rồi bay đi.'))}</div>
       <div class="field-foot"><button type="button" class="pause" id="pauseBtn">${paused?ui.play:ui.pause}</button></div>
-      <figcaption>${t(`Sketch of the play screen, drawn from the brief (see the assumptions in 1.1). Hover a legend row to highlight that part.`,
-                       `Hình minh họa màn chơi, vẽ theo mô tả (xem các giả định ở mục 1.1). Rê chuột vào từng dòng chú thích để làm nổi bật phần tương ứng.`)}</figcaption>
+      <figcaption>${t(`Sketch of the play screen, drawn from the brief and the reference screenshot (see 1.1). Bottles stand in for the cans. Hover a legend row to highlight that part.`,
+                       `Hình minh họa màn chơi, vẽ theo mô tả và screenshot tham khảo (xem mục 1.1). Chai được vẽ thay cho lon. Rê chuột vào từng dòng chú thích để làm nổi bật phần tương ứng.`)}</figcaption>
     </figure>
   </div>`;
 
