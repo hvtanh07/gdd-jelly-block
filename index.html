@@ -729,16 +729,16 @@ const DEMOS={
       ['.lb','transform',[[2.6,T(0,0)],[3.6,T(0,-84)],[3.75,T(0,-84,1.12)],[4.0,T(0,-84,.2)]]],...popTracks('.lb',3.6)
     ]},
   spoon:{D:8, /* the block with the spoon clears; the spoon flies to the green locked hole and opens it */
-    svg:()=>{const o=DO4,[sx,sy]=cc(o,0,2),[gx,gy]=cc(o,4,2);
+    svg:()=>{const o=DO4,[sx,sy]=cc(o,1,3),[gx,gy]=cc(o,4,2);
       return jboard(o,B64)+jstud(o,0,0,1)+jstud(o,4,0,3)+jblock(o,[[2,0],[2,1]],7,[2,1])+
-        `<g class="rb">${jblock(o,[[0,2]],1,[0,2])}</g>`+
+        `<g class="rb">${jblock(o,[[0,2],[1,2],[0,3],[1,3]],1,[0,2])}</g>`+
         `<g class="gb">${jblock(o,[[4,2],[4,3]],3,[4,2])}<g class="lkh">${jlockHole(gx,gy,3)}</g></g>`+
-        `<g class="sp">${jspoon(sx+6,sy+3,3)}</g>`+
-        tap(sx,sy)+puff(cc(o,4,0)[0],cc(o,4,0)[1]);},
+        `<g class="sp">${jspoon(sx,sy+2,3)}</g>`+
+        tap(sx-14,sy-14)+puff(cc(o,4,0)[0],cc(o,4,0)[1]);},
     tracks:()=>[
       ...tapTracks(.4),
       ['.rb','transform',[[.7,T(0,0)],[1.4,T(0,-56)],[1.55,T(0,-56,1.12)],[1.8,T(0,-56,.2)]]],...popTracks('.rb',1.4),
-      ['.sp','transform',[[.7,T(0,0)],[1.4,T(0,-56)],[1.7,T(0,-56,1.3)],[2.5,T(106,-5,1.3)],[2.8,T(106,-5,.4)]]],
+      ['.sp','transform',[[.7,T(0,0)],[1.4,T(0,-56)],[1.7,T(0,-56,1.3)],[2.5,T(84,-28,1.3)],[2.8,T(84,-28,.4)]]],
       ['.sp','opacity',[[0,1],[2.6,1],[2.8,0]]],
       ['.lkh','opacity',[[0,1],[2.7,1],[3.0,0]]],
       ['.gb','transform',[[3.5,T(0,0)],[4.2,T(0,-56)],[4.35,T(0,-56,1.12)],[4.6,T(0,-56,.2)]]],...popTracks('.gb',4.2),
@@ -1233,7 +1233,7 @@ function view(l){
       [N.el4,popup('Sticks different block<br>colors together.','Dính các khối<br>khác màu với nhau.'),lvl(22)],
       [N.el5,popup('Clear the matching spoon<br>to release the lock.','Dọn khối có thìa cùng màu<br>để mở khóa.'),lvl(27)],
       [N.el6,popup('Clear blocks<br>to break the ice.','Dọn các khối khác<br>để phá băng.'),lvl(32)],
-      [N.el7,popup('Clear blocks<br>to thaw the stud.','Dọn các khối khác<br>để chốt tan băng.'),tbd]
+      [N.el7,popup('Clear blocks<br>to release the stud.','Dọn các khối khác<br>để giải phóng chốt.'),tbd]
     ]);
 
   /* one row per booster */
