@@ -519,9 +519,7 @@ const SECTIONS=[
     {id:'remove-ads',n:'6.4',en:'Remove Ads',vi:'Gỡ quảng cáo'}]},
   {id:'live-ops',n:'7',c:6,en:'Live ops',vi:'Tính năng Live Ops',subs:[
     {id:'popup-list',n:'7.1',en:'Popup list',vi:'Danh sách popup'},
-    {id:'popup-priority',n:'7.2',en:'Popup priority',vi:'Thứ tự ưu tiên popup'},
-    {id:'limited-time-reward',n:'7.3',en:'Limited Time Reward',vi:'Quà giới hạn thời gian'},
-    {id:'skip-retry',n:'7.4',en:'Skip Level & Retry with Booster',vi:'Bỏ qua màn & Chơi lại kèm công cụ'}]},
+    {id:'popup-priority',n:'7.2',en:'Popup priority',vi:'Thứ tự ưu tiên popup'}]},
   {id:'change-note',n:'8',c:7,en:'Change note',vi:'Ghi chú thay đổi'}
 ];
 const SEC={};
@@ -549,212 +547,293 @@ const UI={
 };
 
 /* ---------- animated sketches ----------
-   Jelly Block: the play-screen sketch in the hero and one looping demo per element and booster.
+   Jelly Block: the play-screen sketch in the hero (level 23) and one looping demo per element and booster.
+   Template note, kept for reference:
+   and one looping demo per element. Reuse the pattern for a new game:
      DEMOS key:{D:<loop seconds>, svg:()=>`<markup inside a 200×196 box>`, tracks:()=>[[selector,property,[[time,value],…]],…]}
      fieldSVG(): an <svg viewBox="0 0 340 466"> with each legend part in <g class="part part-A"> … part-E.
-   Pieces: tube() + jset() draw a jam tube and its sets of 4 portions, bottle() draws a bottle with 4 fill steps,
-   lid() closes a tube, lockB() covers a locked bottle, badge() is a counter that steps through values. */
-function pin(x,y,l){return `<g class="pin"><circle cx="${x}" cy="${y}" r="11"/><text x="${x}" y="${y}" dy=".34em">${l}</text></g>`;}
-function T(x,y,s){return `translate(${x}px,${y}px)`+(s!=null?` scale(${s})`:'');}
-function padlock(cx,cy,ink){return `<g class="padlock${ink?' ink':''}"><path d="M${cx-4.5},${cy-1}v-3.5a4.5,4.5 0 0 1 9,0v3.5"/><rect x="${cx-7}" y="${cy-1}" width="14" height="11" rx="2.5"/></g>`;}
-/* tap rings and puffs, numbered so one demo can show several */
-function tapN(i,cx,cy){return `<circle class="tap tp${i}" cx="${cx}" cy="${cy}" r="13" style="opacity:0"/>`;}
-function tapNTracks(i,t){return [[`.tp${i}`,'opacity',[[0,0],[t,0],[t+.1,.9],[t+.55,0]]],[`.tp${i}`,'transform',[[t,'scale(.5)'],[t+.55,'scale(1.35)']]]];}
-function puffN(i,cx,cy){return `<g class="smoke sm${i}">${[[-9,-4,9],[10,-2,10],[0,9,11],[-3,-10,7]].map(([dx,dy,r])=>`<circle cx="${cx+dx}" cy="${cy+dy}" r="${r}" style="opacity:0"/>`).join('')}</g>`;}
-function puffNTracks(i,t){return [[`.sm${i} circle`,'transform',[[t,'scale(.3)'],[t+.6,'scale(1.4)']]],[`.sm${i} circle`,'opacity',[[0,0],[t,0],[t+.15,.95],[t+.6,0]]]];}
-
-/* jam tube o={x,y,w,n,p}: n portion rows, p px per portion. Portion k counts from the bottom (0 = at the nozzle). */
-function tube(o){
-  const h=o.n*o.p+6;
-  return `<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${h}" rx="${(o.w*.3).toFixed(1)}" style="fill:var(--tint);stroke:var(--muted);stroke-width:1.6"/>`+
-    `<path d="M${o.x+o.w*.22} ${o.y+h-1}h${o.w*.56}l-${o.w*.12} ${o.p}h-${o.w*.32}z" style="fill:var(--muted)"/>`;
+   Demo keys ready to reuse: elements hidden, locked, linked, door, lockedBox, blockQueue, lockedSlot;
+   boosters hand, shuffle, magnet. */
+/* ---------- play-screen sketch ---------- */
+function rr(x,y,w,h,r){
+  return `M${x+r},${y}H${x+w-r}A${r},${r} 0 0 1 ${x+w},${y+r}V${y+h-r}A${r},${r} 0 0 1 ${x+w-r},${y+h}H${x+r}A${r},${r} 0 0 1 ${x},${y+h-r}V${y+r}A${r},${r} 0 0 1 ${x+r},${y}Z`;
 }
-const unitY=(o,k)=>o.y+3+(o.n-1-k)*o.p;
-/* one set = 4 portions of one color from row k0 up; c='?' draws a Hidden Jam set. cls+i names each portion (i=0 bottom). */
-function jset(o,k0,c,cls,cnt){
-  let s='';const m=cnt||4;
-  for(let i=0;i<m;i++){const uy=unitY(o,k0+i);s+=`<rect class="${c==='?'?'hidbox':'f'+c}${cls?` ${cls}${i}`:''}" x="${o.x+3}" y="${(uy+.5).toFixed(1)}" width="${o.w-6}" height="${o.p-1}" rx="2.5"/>`;}
-  if(c==='?'){const cy=unitY(o,k0+m-1)+m*o.p/2;s+=`<text class="qmark" x="${o.x+o.w/2}" y="${cy}" dy=".35em" style="font-size:${Math.min(17,o.p*1.9).toFixed(0)}px">?</text>`;}
+const LIGHT={4:1,5:1,6:1,8:1};
+const SZ={2:16,3:24,4:32,5:40,6:24};
+function boxSVG(x,y,w,h,c,n){
+  return `<rect class="f${c}" x="${x}" y="${y}" width="${w}" height="${h}" rx="9"/><rect class="lip" x="${x}" y="${y}" width="${w}" height="${h}" rx="9"/>`+
+         `<rect class="f${c}" x="${x}" y="${y}" width="${w}" height="${h-5}" rx="9"/>`+
+         `<text class="bn${LIGHT[c]?' l':''}" x="${x+w/2}" y="${y+(h-5)/2}" dy=".34em">${SZ[n]||n}</text>`;
+}
+function pin(x,y,l){return `<g class="pin"><circle cx="${x}" cy="${y}" r="11"/><text x="${x}" y="${y}" dy=".34em">${l}</text></g>`;}
+/* ---------- element demos: small looping sketches, one per element ---------- */
+const DSX=[19,61,103,145],BW=34,BH=32;
+function T(x,y,s){return `translate(${x}px,${y}px)`+(s!=null?` scale(${s})`:'');}
+function mbox(x,y,c,n){
+  return `<rect class="f${c}" x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/><rect class="lip" x="${x}" y="${y}" width="${BW}" height="${BH}" rx="8"/>`+
+         `<rect class="f${c}" x="${x}" y="${y}" width="${BW}" height="${BH-4}" rx="8"/><text class="bn sm${LIGHT[c]?' l':''}" x="${x+BW/2}" y="${y+(BH-4)/2}" dy=".35em">${SZ[n]||n}</text>`;
+}
+function dslots(y,skip){return DSX.map((x,i)=>skip&&skip.includes(i)?'':`<rect class="slot" x="${x}" y="${y}" width="36" height="36" rx="8"/>`).join('');}
+function cdBadge(cx,cy,extra){
+  const vals=['2','1','0'].concat(extra||[]);
+  return `<g class="pin cdg"><circle cx="${cx}" cy="${cy}" r="9.5"/>${vals.map((v,i)=>`<text class="v${i}" x="${cx}" y="${cy}" dy=".35em"${i?' style="opacity:0"':''}>${v.replace(/b$/,'')}</text>`).join('')}</g>`;
+}
+function padlock(cx,cy,ink){return `<g class="padlock${ink?' ink':''}"><path d="M${cx-4.5},${cy-1}v-3.5a4.5,4.5 0 0 1 9,0v3.5"/><rect x="${cx-7}" y="${cy-1}" width="14" height="11" rx="2.5"/></g>`;}
+function cdTracks(sel,a,b){return [[`${sel} .v0`,'opacity',[[0,1],[a,1],[a+.12,0]]],[`${sel} .v1`,'opacity',[[0,0],[a,0],[a+.12,1],[b,1],[b+.12,0]]],[`${sel} .v2`,'opacity',[[0,0],[b,0],[b+.12,1]]]];}
+/* booster demos: a tap ring shows where the player taps, a puff shows a box clearing */
+function tap(cx,cy){return `<circle class="tap" cx="${cx}" cy="${cy}" r="15" style="opacity:0"/>`;}
+function tapTracks(t){return [['.tap','opacity',[[0,0],[t,0],[t+.1,.9],[t+.55,0]]],['.tap','transform',[[t,'scale(.5)'],[t+.55,'scale(1.35)']]]];}
+function puff(cx,cy){return `<g class="smoke">${[[-9,-4,9],[10,-2,10],[0,9,11],[-3,-10,7]].map(([dx,dy,r])=>`<circle cx="${cx+dx}" cy="${cy+dy}" r="${r}" style="opacity:0"/>`).join('')}</g>`;}
+function puffTracks(t){return [['.smoke circle','transform',[[t,'scale(.3)'],[t+.6,'scale(1.4)']]],['.smoke circle','opacity',[[0,0],[t,0],[t+.15,.95],[t+.6,0]]]];}
+/* ---------- Jelly Block drawing helpers ----------
+   Board, block, stud and element pieces in board-cell units. o={ox,oy,cs}: board origin and cell size. */
+const RIM='#4A4FA8';
+function jboard(o,rects){
+  const {ox,oy,cs}=o;let s='';
+  s+=rects.map(([c,r,w,h])=>`<rect x="${ox+c*cs-5}" y="${oy+r*cs-5}" width="${w*cs+10}" height="${h*cs+10}" rx="10" fill="${RIM}"/>`).join('');
+  s+=rects.map(([c,r,w,h])=>`<rect class="trackfill" x="${ox+c*cs}" y="${oy+r*cs}" width="${w*cs}" height="${h*cs}" rx="5"/>`).join('');
+  rects.forEach(([c,r,w,h])=>{for(let i=0;i<w;i++)for(let j=0;j<h;j++)s+=`<rect x="${ox+(c+i)*cs+1.5}" y="${oy+(r+j)*cs+1.5}" width="${cs-3}" height="${cs-3}" rx="4" fill="#fff" opacity=".06"/>`;});
   return s;
 }
-/* lid that closes a tube at its nozzle */
-function lid(o){const h=o.n*o.p+6;return `<rect class="door" x="${o.x-4}" y="${o.y+h-3}" width="${o.w+8}" height="9" rx="3"/>${padlock(o.x+o.w/2,o.y+h-1)}`;}
-/* the dashed spot under a tube where a bottle fills */
-function spot(o,w){const bx=o.x+o.w/2-w/2-4,h=Math.round(w*1.6)+8;return `<rect class="slot" x="${bx}" y="${o.y+o.n*o.p+6+o.p+4}" width="${w+8}" height="${h}" rx="8"/>`;}
-const spotXY=(o,w)=>[o.x+o.w/2-w/2,o.y+o.n*o.p+6+o.p+8];
-/* bottle: top-left x,y, width w (height 1.6 w). Color shows on the cap and outline. f fill steps already shown; seg+i names the 4 steps. */
-function bottle(x,y,w,c,f,seg){
-  const h=Math.round(w*1.6),cw=w*.6,nw=w*.42,ch=h*.13,nh=h*.1,by=y+ch+nh,bh=h-ch-nh,p=w*.17,sh=(bh-2*p)/4;
-  let s=`<rect x="${x+(w-nw)/2}" y="${y+ch-1}" width="${nw}" height="${nh+3}" style="fill:var(--surface);stroke:var(--muted);stroke-width:1.4"/>`+
-        `<rect x="${x}" y="${by}" width="${w}" height="${bh}" rx="${(w*.24).toFixed(1)}" style="fill:var(--surface);stroke:var(--c${c});stroke-width:2.4"/>`;
-  for(let i=0;i<4;i++){
-    const yy=by+bh-p-(i+1)*sh;
-    s+=`<rect class="f${c}${seg?` ${seg}${i}`:''}" x="${(x+p).toFixed(1)}" y="${(yy+.6).toFixed(1)}" width="${(w-2*p).toFixed(1)}" height="${(sh-1.2).toFixed(1)}" rx="2"${i<(f||0)?'':' style="opacity:0"'}/>`;
+const cc=(o,c,r)=>[o.ox+c*o.cs+o.cs/2,o.oy+r*o.cs+o.cs/2];
+/* X shape: colored (stud) or dark (x-shaped hole) */
+function jx(cx,cy,r,col){
+  return `<path d="M${cx-r} ${cy-r}L${cx+r} ${cy+r}M${cx+r} ${cy-r}L${cx-r} ${cy+r}" style="fill:none;stroke:${col?`var(--c${col})`:'#000'};stroke-width:${(r*.85).toFixed(1)};stroke-linecap:round${col?'':';opacity:.45'}"/>`;
+}
+/* a block: cells [[c,r],…], color 1–8 (or 'lock' for the stone block), hole [c,r,'o'|'x'] */
+function jblock(o,cells,col,hole){
+  const {ox,oy,cs}=o,p=2,set=new Set(cells.map(([c,r])=>c+','+r)),fc=col==='lock'?'hidbox':'f'+col;
+  let s='';
+  cells.forEach(([c,r])=>{
+    const x=ox+c*cs,y=oy+r*cs,R=set.has((c+1)+','+r),D=set.has(c+','+(r+1));
+    s+=`<rect class="${fc}" x="${x+p}" y="${y+p}" width="${cs-2*p}" height="${cs-2*p}" rx="${(cs*.22).toFixed(1)}"/>`;
+    if(R)s+=`<rect class="${fc}" x="${x+cs-p-3}" y="${y+p}" width="${2*p+6}" height="${cs-2*p}"/>`;
+    if(D)s+=`<rect class="${fc}" x="${x+p}" y="${y+cs-p-3}" width="${cs-2*p}" height="${2*p+6}"/>`;
+    if(R&&D&&set.has((c+1)+','+(r+1)))s+=`<rect class="${fc}" x="${x+cs-p-3}" y="${y+cs-p-3}" width="${2*p+6}" height="${2*p+6}"/>`;
+  });
+  if(hole){
+    const [hx,hy]=cc(o,hole[0],hole[1]);
+    s+=hole[2]==='x'?jx(hx,hy,cs*.2):`<circle class="lip" cx="${hx}" cy="${hy}" r="${(cs*.22).toFixed(1)}"/><circle class="lip" cx="${hx}" cy="${hy+1}" r="${(cs*.19).toFixed(1)}"/>`;
   }
-  return s+`<rect class="f${c}" x="${x+(w-cw)/2}" y="${y}" width="${cw}" height="${ch.toFixed(1)}" rx="2.5"/>`;
+  return s;
 }
-/* dark cover and padlock over a Locked Bottle */
-function lockB(x,y,w){const h=Math.round(w*1.6);return `<rect class="veil" x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="7"/>${padlock(x+w/2,y+h*.55)}`;}
-/* counter badge: shows vals[0], then steps to the next value at each time in steps() */
-function badge(cx,cy,vals,cls){return `<g class="pin ${cls}"><circle cx="${cx}" cy="${cy}" r="9.5"/>${vals.map((v,i)=>`<text class="${cls}${i}" x="${cx}" y="${cy}" dy=".35em"${i?' style="opacity:0"':''}>${v}</text>`).join('')}</g>`;}
-function steps(cls,times){
-  const n=times.length;
-  return Array.from({length:n+1},(_,i)=>[`.${cls}${i}`,'opacity',
-    i===0?[[0,1],[times[0],1],[times[0]+.1,0]]
-    :i===n?[[0,0],[times[n-1],0],[times[n-1]+.1,1]]
-    :[[0,0],[times[i-1],0],[times[i-1]+.1,1],[times[i],1],[times[i]+.1,0]]]);
+function jstud(o,c,r,col,x){
+  const [cx,cy]=cc(o,c,r);
+  return x?jx(cx,cy,o.cs*.21,col):`<circle class="f${col}" cx="${cx}" cy="${cy}" r="${(o.cs*.27).toFixed(1)}" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>`;
 }
-/* pour: the 4 portions of tube set `u` empty from the bottom while the 4 steps of bottle `b` fill, starting at t */
-function pour(u,b,t,dt){const d=dt||.22;return [0,1,2,3].flatMap(i=>[[`.${u}${i}`,'opacity',[[0,1],[t+i*d,1],[t+i*d+.12,0]]],[`.${b}${i}`,'opacity',[[0,0],[t+i*d,0],[t+i*d+.12,1]]]]);}
-/* a full bottle at offset (dx,dy) is capped, lifts off and fades from t */
-function leave(sel,dx,dy,t){return [[sel,'opacity',[[0,1],[t+.3,1],[t+.5,0]]]];}
-function leaveMove(dx,dy,t){return [[t,T(dx,dy)],[t+.15,T(dx,dy,1.1)],[t+.5,T(dx,dy-18,.5)]];}
-/* booster button */
-function bbtn(cx,cy,inner){return `<g class="btn"><circle class="f8" cx="${cx}" cy="${cy}" r="18"/>${inner}</g>`;}
-function btnTracks(t){return [['.btn','transform',[[t+.1,'scale(1)'],[t+.22,'scale(.88)'],[t+.4,'scale(1)']]]];}
+/* white two-way arrow shown on an arrow block */
+function jarrow(x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,px=-uy,py=ux,h=7,w=6;
+  const head=(x,y,s)=>`M${x} ${y}L${(x-s*ux*h+px*w).toFixed(1)} ${(y-s*uy*h+py*w).toFixed(1)}L${(x-s*ux*h-px*w).toFixed(1)} ${(y-s*uy*h-py*w).toFixed(1)}Z`;
+  return `<path d="M${x1+ux*h} ${y1+uy*h}L${x2-ux*h} ${y2-uy*h}" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="${head(x2,y2,1)}${head(x1,y1,-1)}" fill="#fff"/>`;
+}
+/* spoon icon on a block, and the colored locked hole it opens */
+function jspoon(cx,cy,col){
+  return `<rect x="${cx-1.6}" y="${cy}" width="3.2" height="9" rx="1.6" fill="var(--c${col})" stroke="#fff" stroke-width="1.2"/><ellipse cx="${cx}" cy="${cy-4}" rx="4.6" ry="6" fill="var(--c${col})" stroke="#fff" stroke-width="1.6"/>`;
+}
+function jlockHole(cx,cy,col){return `<circle cx="${cx}" cy="${cy}" r="11" fill="none" stroke="var(--c${col})" stroke-width="3"/>${padlock(cx,cy-2)}`;}
+/* ice layer over frozen blocks and studs */
+function jice(o,cells){const {ox,oy,cs}=o;return cells.map(([c,r])=>`<rect x="${ox+c*cs+1}" y="${oy+r*cs+1}" width="${cs-2}" height="${cs-2}" rx="${(cs*.24).toFixed(1)}" fill="var(--ice)" fill-opacity=".42" stroke="#fff" stroke-opacity=".8" stroke-width="1.5"/>`).join('');}
+function jiceStud(o,c,r){const [cx,cy]=cc(o,c,r);return `<circle cx="${cx}" cy="${cy}" r="${(o.cs*.42).toFixed(1)}" fill="var(--ice)" fill-opacity=".4" stroke="#fff" stroke-opacity=".85" stroke-width="1.5"/>`;}
+/* counter text that steps through values */
+function jcount(cx,cy,vals,cls){return vals.map((v,i)=>`<text class="bn sm ${cls}${i}" x="${cx}" y="${cy}" dy=".35em"${i?' style="opacity:0"':''}>${v}</text>`).join('');}
+/* a block clears: pops and fades at time t */
+function popTracks(sel,t){return [[sel,'opacity',[[0,1],[t+.25,1],[t+.4,0]]]];}
+function popScale(sel,t,base){const b=base||'';return [[sel,'transform',[[t,b+' scale(1)'],[t+.15,b+' scale(1.12)'],[t+.4,b+' scale(.2)']]]];}
 
-const BW=22,BH=Math.round(BW*1.6);
+const DO={ox:16,oy:26,cs:28};   /* demo board origin: 6 columns × 5 rows */
+const DO4={ox:16,oy:40,cs:28};  /* demo board origin: 6 columns × 4 rows */
+const B65=[[0,0,6,5]],B64=[[0,0,6,4]];
 const DEMOS={
   /* ----- element demos ----- */
-  hiddenJam:{D:7.6, /* red fills; the column drops; the hidden set reaches the bottom and shows green; green fills */
-    svg:()=>{const A={x:40,y:4,w:30,n:10,p:7},B={x:130,y:4,w:30,n:10,p:7},[sx,sy]=spotXY(A,BW);
-      return tube(A)+tube(B)+spot(A,BW)+spot(B,BW)+
-        jset(A,0,1,'ur')+`<g class="rest"><g class="hj">${jset(A,4,'?')}</g><g class="gj" style="opacity:0">${jset(A,4,3,'ug')}</g>${jset(A,8,2,'',2)}</g>`+
-        jset(B,0,2)+jset(B,4,4)+jset(B,8,5,'',2)+
-        `<g class="br">${bottle(30,152,BW,1,0,'sr')}</g><g class="bg">${bottle(84,152,BW,3,0,'sg')}</g>${bottle(138,152,BW,4,0)}`+
-        tapN(0,41,170)+tapN(1,95,170)+puffN(0,sx+11,sy+10)+puffN(1,sx+11,sy+10);},
-    tracks:()=>{const [sx,sy]=spotXY({x:40,y:4,w:30,n:10,p:7},BW);return [
-      ...tapNTracks(0,.4),
-      ['.br','transform',[[.7,T(0,0)],[1.3,T(sx-30,sy-152)],...leaveMove(sx-30,sy-152,2.5)]],
-      ...pour('ur','sr',1.4),...leave('.br',0,0,2.5),...puffNTracks(0,2.75),
-      ['.rest','transform',[[3.1,T(0,0)],[3.6,T(0,28)]]],
-      ['.hj','opacity',[[0,1],[3.8,1],[4.15,0]]],['.gj','opacity',[[0,0],[3.8,0],[4.15,1]]],
-      ...tapNTracks(1,4.5),
-      ['.bg','transform',[[4.8,T(0,0)],[5.4,T(sx-84,sy-152)],...leaveMove(sx-84,sy-152,6.6)]],
-      ...pour('ug','sg',5.5),...leave('.bg',0,0,6.6),...puffNTracks(1,6.85)
-    ];}},
-  lockedBottle:{D:7.2, /* the bottle in front goes; the locked bottle reaches the front and shows 2; two bottles go up; the lock opens */
-    svg:()=>{const sl=[16,62,108,154];
-      return sl.map(x=>`<rect class="slot" x="${x}" y="8" width="30" height="44" rx="8"/>`).join('')+
-        `<g class="a0">${bottle(36,74,BW,1,0)}</g>`+
-        `<g class="lk">${bottle(36,124,BW,7,0)}<g class="cv">${lockB(36,124,BW)}</g>${badge(62,124,['2','1','0'],'lc')}</g>`+
-        `<g class="b0">${bottle(89,74,BW,2,0)}</g><g class="b1">${bottle(89,124,BW,4,0)}</g>`+
-        `<g class="c0">${bottle(142,74,BW,3,0)}</g><g class="c1">${bottle(142,124,BW,6,0)}</g>`+
-        tapN(0,47,92)+tapN(1,100,92)+tapN(2,153,92)+tapN(3,47,142);},
+  arrow:{D:6.6, /* the arrow block shakes when pushed sideways, then slides down its axis onto the stud */
+    svg:()=>{const o=DO,[ax,ay]=cc(o,1,0),[bx,by]=cc(o,1,1);
+      return jboard(o,B65)+jstud(o,1,3,3)+jstud(o,4,4,2)+jblock(o,[[3,1],[4,1]],2,[4,1])+jblock(o,[[2,0],[2,1]],7,[2,1])+
+        `<g class="ab">${jblock(o,[[1,0],[1,1]],3,[1,1])}${jarrow(ax,ay-8,bx,by-6)}</g>`+tap(ax,ay+14)+puff(cc(o,1,3)[0],cc(o,1,3)[1]);},
     tracks:()=>[
-      ['.lc','opacity',[[0,0],[1.4,0],[1.6,1],[4.25,1],[4.5,0]]],
-      ...tapNTracks(0,.3),['.a0','transform',[[.55,T(0,0)],[1.1,T(-16,-62)]]],
-      ...tapNTracks(1,2.0),['.b0','transform',[[2.25,T(0,0)],[2.8,T(-23,-62)]]],
-      ...tapNTracks(2,3.3),['.c0','transform',[[3.55,T(0,0)],[4.1,T(-30,-62)]]],
-      ['.b1','opacity',[[0,.55],[2.8,.55],[3.1,1]]],['.c1','opacity',[[0,.55],[4.1,.55],[4.4,1]]],
-      ...steps('lc',[2.8,4.1]),
-      ['.cv','opacity',[[0,1],[4.25,1],[4.6,0]]],
-      ...tapNTracks(3,5.0),['.lk','transform',[[5.25,T(0,0)],[5.8,T(122,-112)]]],['.lk','opacity',[[0,.55],[1.1,.55],[1.4,1]]]
+      ...tapTracks(.5),
+      ['.ab','transform',[[.8,T(0,0)],[.9,T(5,0)],[1.0,T(-3,0)],[1.1,T(4,0)],[1.2,T(0,0)],[1.8,T(0,0)],[2.4,T(0,56)],[2.9,T(0,56)],[3.15,T(0,56,1.1)],[3.4,T(0,56,.2)]]],
+      ...popTracks('.ab',3.05),
+      ...puffTracks(3.25)
     ]},
-  blockedTube:{D:8.6, /* two bottles go up, the counter hits 0, the tubes swap: left closes, right opens */
-    svg:()=>{const A={x:36,y:4,w:32,n:8,p:7},B={x:132,y:4,w:32,n:8,p:7},[ax,ay]=spotXY(A,BW),[bx,by]=spotXY(B,BW);
-      return tube(A)+tube(B)+spot(A,BW)+spot(B,BW)+
-        jset(A,0,1,'ur')+`<g class="restA"><g>${jset(A,4,3,'ug')}</g></g>`+jset(B,0,2,'ub')+jset(B,4,4)+
-        `<g class="lidA" style="opacity:0">${lid(A)}</g><g class="lidB">${lid(B)}</g>`+badge(100,36,['2','1','0','2','1'],'tc')+
-        `<g class="br">${bottle(20,152,BW,1,0,'sr')}</g><g class="bg">${bottle(70,152,BW,3,0,'sg')}</g><g class="bb">${bottle(120,152,BW,2,0,'sb')}</g>`+
-        tapN(0,31,170)+tapN(1,81,170)+tapN(2,131,170)+puffN(0,ax+11,ay+10)+puffN(1,ax+11,ay+10);},
-    tracks:()=>{const [ax,ay]=spotXY({x:36,y:4,w:32,n:8,p:7},BW),[bx,by]=spotXY({x:132,y:4,w:32,n:8,p:7},BW);return [
-      ...tapNTracks(0,.3),
-      ['.br','transform',[[.55,T(0,0)],[1.1,T(ax-20,ay-152)],...leaveMove(ax-20,ay-152,2.1)]],
-      ...pour('ur','sr',1.15,.2),...leave('.br',0,0,2.1),...puffNTracks(0,2.35),
-      ['.restA','transform',[[2.5,T(0,0)],[2.9,T(0,28)]]],
-      ...tapNTracks(1,3.0),
-      ['.bg','transform',[[3.25,T(0,0)],[3.8,T(ax-70,ay-152)],...leaveMove(ax-70,ay-152,4.8)]],
-      ...pour('ug','sg',3.85,.2),...leave('.bg',0,0,4.8),...puffNTracks(1,5.05),
-      ['.lidA','opacity',[[0,0],[5.3,0],[5.6,1]]],['.lidA','transform',[[5.3,T(0,8)],[5.6,T(0,0)]]],
-      ['.lidB','opacity',[[0,1],[5.3,1],[5.6,0]]],['.lidB','transform',[[5.3,T(0,0)],[5.6,T(0,8)]]],
-      ...steps('tc',[1.1,3.8,5.7,7.0]),
-      ...tapNTracks(2,6.2),
-      ['.bb','transform',[[6.45,T(0,0)],[7.0,T(bx-120,by-152)]]],
-      ...pour('ub','sb',7.1,.2)
-    ];}},
+  hiddenBlock:{D:7.8, /* the grey block moves but cannot clear; two blocks clear, its color shows, then it clears */
+    svg:()=>{const o=DO4,[lx,ly]=cc(o,2,1);
+      return jboard(o,B64)+jstud(o,0,0,1)+jstud(o,5,0,2)+jstud(o,3,3,4)+
+        `<g class="hb"><g class="yb">${jblock(o,[[2,1],[3,1]],4,[3,1])}</g>`+
+        `<g class="lk">${jblock(o,[[2,1],[3,1]],'lock',[3,1])}${jcount(lx,ly,['2','1','0'],'lc')}</g></g>`+
+        `<g class="r1">${jblock(o,[[0,2]],1,[0,2])}</g><g class="b1">${jblock(o,[[5,2]],2,[5,2])}</g>`+
+        tap(cc(o,2,1)[0],cc(o,2,1)[1])+puff(cc(o,3,3)[0],cc(o,3,3)[1]);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.hb','transform',[[.6,T(0,0)],[1.2,T(0,-28)],[4.4,T(0,-28)],[5.2,T(0,56)],[5.35,T(0,56,1.12)],[5.6,T(0,56,.2)]]],...popTracks('.hb',5.2),
+      ['.r1','transform',[[1.5,T(0,0)],[2.1,T(0,-56)],[2.25,T(0,-56,1.12)],[2.5,T(0,-56,.2)]]],...popTracks('.r1',2.1),
+      ['.b1','transform',[[2.7,T(0,0)],[3.3,T(0,-56)],[3.45,T(0,-56,1.12)],[3.7,T(0,-56,.2)]]],...popTracks('.b1',3.3),
+      ['.lc0','opacity',[[0,1],[2.4,1],[2.5,0]]],['.lc1','opacity',[[0,0],[2.4,0],[2.5,1],[3.6,1],[3.7,0]]],['.lc2','opacity',[[0,0],[3.6,0],[3.7,1]]],
+      ['.lk','opacity',[[0,1],[3.8,1],[4.2,0]]],
+      ...puffTracks(5.5)
+    ]},
+  frozenBlock:{D:7.6, /* the frozen block does not move; two blocks clear, the ice breaks, it slides onto its stud */
+    svg:()=>{const o=DO4,[lx,ly]=cc(o,2,2);
+      return jboard(o,B64)+jstud(o,0,0,1)+jstud(o,5,0,4)+jstud(o,2,0,2)+
+        `<g class="fb">${jblock(o,[[2,1],[2,2]],2,[2,1])}<g class="ic">${jice(o,[[2,1],[2,2]])}${jcount(lx,ly,['2','1','0'],'fc')}</g></g>`+
+        `<g class="r1">${jblock(o,[[0,2]],1,[0,2])}</g><g class="y1">${jblock(o,[[5,2]],4,[5,2])}</g>`+
+        tap(cc(o,2,1)[0],cc(o,2,1)[1])+puff(cc(o,2,0)[0],cc(o,2,0)[1]);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.fb','transform',[[.6,T(0,0)],[.7,T(3,0)],[.8,T(-3,0)],[.9,T(2,0)],[1.0,T(0,0)],[4.3,T(0,0)],[4.8,T(0,-28)],[4.95,T(0,-28,1.12)],[5.2,T(0,-28,.2)]]],...popTracks('.fb',4.8),
+      ['.r1','transform',[[1.4,T(0,0)],[2.0,T(0,-56)],[2.15,T(0,-56,1.12)],[2.4,T(0,-56,.2)]]],...popTracks('.r1',2.0),
+      ['.y1','transform',[[2.6,T(0,0)],[3.2,T(0,-56)],[3.35,T(0,-56,1.12)],[3.6,T(0,-56,.2)]]],...popTracks('.y1',3.2),
+      ['.fc0','opacity',[[0,1],[2.3,1],[2.4,0]]],['.fc1','opacity',[[0,0],[2.3,0],[2.4,1],[3.5,1],[3.6,0]]],['.fc2','opacity',[[0,0],[3.5,0],[3.6,1]]],
+      ['.ic','opacity',[[0,1],[3.7,1],[4.1,0]]],['.ic','transform',[[3.7,'scale(1)'],[4.1,'scale(1.15)']]],
+      ...puffTracks(5.1)
+    ]},
+  frozenStud:{D:7.6, /* the yellow block is stopped by the frozen stud; two blocks clear, the ice melts, the block fits */
+    svg:()=>{const o=DO4,[sx,sy]=cc(o,3,0);
+      return jboard(o,B64)+jstud(o,0,0,1)+jstud(o,5,0,2)+jstud(o,3,0,4)+
+        `<g class="is">${jiceStud(o,3,0)}${jcount(sx,sy,['2','1','0'],'sc')}</g>`+
+        `<g class="yb">${jblock(o,[[3,2],[3,3]],4,[3,2])}</g>`+
+        `<g class="r1">${jblock(o,[[0,2]],1,[0,2])}</g><g class="b1">${jblock(o,[[5,2]],2,[5,2])}</g>`+
+        tap(cc(o,3,2)[0],cc(o,3,2)[1])+puff(sx,sy);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.yb','transform',[[.6,T(0,0)],[1.0,T(0,-24)],[1.15,T(0,-28)],[1.3,T(0,-24)],[1.5,T(0,-28)],[4.3,T(0,-28)],[4.8,T(0,-56)],[4.95,T(0,-56,1.12)],[5.2,T(0,-56,.2)]]],...popTracks('.yb',4.8),
+      ['.r1','transform',[[1.7,T(0,0)],[2.3,T(0,-56)],[2.45,T(0,-56,1.12)],[2.7,T(0,-56,.2)]]],...popTracks('.r1',2.3),
+      ['.b1','transform',[[2.8,T(0,0)],[3.4,T(0,-56)],[3.55,T(0,-56,1.12)],[3.8,T(0,-56,.2)]]],...popTracks('.b1',3.4),
+      ['.sc0','opacity',[[0,1],[2.6,1],[2.7,0]]],['.sc1','opacity',[[0,0],[2.6,0],[2.7,1],[3.7,1],[3.8,0]]],['.sc2','opacity',[[0,0],[3.7,0],[3.8,1]]],
+      ['.is','opacity',[[0,1],[3.9,1],[4.2,0]]],['.is','transform',[[3.9,'scale(1)'],[4.2,'scale(1.2)']]],
+      ...puffTracks(5.1)
+    ]},
+  xStud:{D:7.4, /* a round hole bumps against the X stud; the X-hole block fits and clears */
+    svg:()=>{const o=DO;
+      return jboard(o,B65)+jstud(o,2,0,3,true)+jstud(o,5,4,1)+jblock(o,[[4,1],[5,1]],1,[4,1])+
+        `<g class="rb">${jblock(o,[[2,2]],3,[2,2])}</g><g class="xb">${jblock(o,[[2,4]],3,[2,4,'x'])}</g>`+
+        tap(cc(o,2,2)[0],cc(o,2,2)[1])+puff(cc(o,2,0)[0],cc(o,2,0)[1]);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.rb','transform',[[.7,T(0,0)],[1.1,T(0,-24)],[1.25,T(0,-28)],[1.45,T(0,-28)],[1.7,T(0,0)],[2.2,T(0,0)],[2.7,T(28,0)]]],
+      ['.xb','transform',[[3.1,T(0,0)],[4.0,T(0,-112)],[4.15,T(0,-112,1.12)],[4.4,T(0,-112,.2)]]],...popTracks('.xb',4.0),
+      ...puffTracks(4.3)
+    ]},
+  linked:{D:7.6, /* the linked pair moves as one; red clears, the link breaks, blue moves on alone */
+    svg:()=>{const o=DO4,[ex,ey]=[o.ox+2*o.cs,o.oy+1.5*o.cs];
+      return jboard(o,B64)+jstud(o,1,3,1)+jstud(o,2,0,2)+jblock(o,[[4,0],[4,1]],4,[4,1])+
+        `<g class="grp"><g class="lr">${jblock(o,[[1,1]],1,[1,1])}</g><g class="lb">${jblock(o,[[2,1]],2,[2,1])}</g>`+
+        `<rect class="tape" x="${ex-4}" y="${ey-9}" width="8" height="18" rx="3" fill="#fff" stroke="#18203A" stroke-width="1.5"/></g>`+
+        tap(cc(o,1,1)[0],cc(o,1,1)[1])+puff(cc(o,1,3)[0],cc(o,1,3)[1]);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.grp','transform',[[.7,T(0,0)],[1.5,T(0,56)]]],
+      ['.lr','transform',[[1.6,'scale(1)'],[1.75,'scale(1.12)'],[2.0,'scale(.2)']]],...popTracks('.lr',1.6),
+      ['.tape','opacity',[[0,1],[1.7,1],[1.9,0]]],
+      ...puffTracks(1.85),
+      ['.lb','transform',[[2.6,T(0,0)],[3.6,T(0,-84)],[3.75,T(0,-84,1.12)],[4.0,T(0,-84,.2)]]],...popTracks('.lb',3.6)
+    ]},
+  spoon:{D:8, /* the block with the spoon clears; the spoon flies to the green locked hole and opens it */
+    svg:()=>{const o=DO4,[sx,sy]=cc(o,1,3),[gx,gy]=cc(o,4,2);
+      return jboard(o,B64)+jstud(o,0,0,1)+jstud(o,4,0,3)+jblock(o,[[2,0],[2,1]],7,[2,1])+
+        `<g class="rb">${jblock(o,[[0,2],[1,2],[0,3],[1,3]],1,[0,2])}</g>`+
+        `<g class="gb">${jblock(o,[[4,2],[4,3]],3,[4,2])}<g class="lkh">${jlockHole(gx,gy,3)}</g></g>`+
+        `<g class="sp">${jspoon(sx,sy+2,3)}</g>`+
+        tap(sx-14,sy-14)+puff(cc(o,4,0)[0],cc(o,4,0)[1]);},
+    tracks:()=>[
+      ...tapTracks(.4),
+      ['.rb','transform',[[.7,T(0,0)],[1.4,T(0,-56)],[1.55,T(0,-56,1.12)],[1.8,T(0,-56,.2)]]],...popTracks('.rb',1.4),
+      ['.sp','transform',[[.7,T(0,0)],[1.4,T(0,-56)],[1.7,T(0,-56,1.3)],[2.5,T(84,-28,1.3)],[2.8,T(84,-28,.4)]]],
+      ['.sp','opacity',[[0,1],[2.6,1],[2.8,0]]],
+      ['.lkh','opacity',[[0,1],[2.7,1],[3.0,0]]],
+      ['.gb','transform',[[3.5,T(0,0)],[4.2,T(0,-56)],[4.35,T(0,-56,1.12)],[4.6,T(0,-56,.2)]]],...popTracks('.gb',4.2),
+      ...puffTracks(4.5)
+    ]},
   /* ----- booster demos ----- */
-  extraTray:{D:5.8, /* the single slot is full; the booster adds a 2nd slot; a bottle goes into it */
-    svg:()=>`<rect class="slot" x="46" y="30" width="32" height="46" rx="8"/>`+bottle(51,35,BW,2,0)+
-        `<g class="ns"><rect class="slot" x="96" y="30" width="32" height="46" rx="8"/></g>`+
-        `<g class="nb">${bottle(30,140,BW,6,0)}</g>${bottle(80,140,BW,1,0)}`+
-        bbtn(136,152,`<text class="bn sm" x="136" y="152" dy=".35em">+1</text>`)+tapN(0,136,152),
+  shrink:{D:6.4, /* the big block shrinks to one cell at its hole, then slips through the gap */
+    svg:()=>{const o=DO4;
+      return jboard(o,B64)+jstud(o,5,2,7)+jblock(o,[[3,0],[3,1]],2,[3,0])+jblock(o,[[3,3],[4,3]],4,[4,3])+
+        `<g class="big">${jblock(o,[[1,1],[2,1],[1,2],[2,2]],7,[2,2])}</g>`+
+        `<g class="one" style="opacity:0">${jblock(o,[[2,2]],7,[2,2])}</g>`+
+        tap(cc(o,1,1)[0]+14,cc(o,1,1)[1]+14)+puff(cc(o,5,2)[0],cc(o,5,2)[1]);},
     tracks:()=>[
-      ...tapNTracks(0,.6),...btnTracks(.6),
-      ['.ns','opacity',[[0,0],[1.1,0],[1.5,1]]],['.ns','transform',[[1.1,'scale(.3)'],[1.4,'scale(1.12)'],[1.6,'scale(1)']]],
-      ['.nb','transform',[[2.2,T(0,0)],[2.9,T(71,-105)]]]
+      ...tapTracks(.5),
+      ['.big','transform',[[.9,'scale(1)'],[1.3,'scale(.4)']]],['.big','opacity',[[0,1],[1.2,1],[1.35,0]]],
+      ['.one','opacity',[[0,0],[1.25,0],[1.4,1],[3.1,1],[3.25,0]]],
+      ['.one','transform',[[1.25,T(0,0,.3)],[1.6,T(0,0,1)],[2.2,T(0,0)],[2.9,T(84,0)],[3.05,T(84,0,1.12)],[3.3,T(84,0,.2)]]],
+      ...puffTracks(3.2)
     ]},
-  shuffle:{D:6.6, /* no tube matches a bottle; the jam mixes; red and yellow land at the bottom; red fills */
-    svg:()=>{const A={x:30,y:4,w:34,n:8,p:7},B={x:136,y:4,w:34,n:8,p:7},[ax,ay]=spotXY(A,BW);
-      return tube(A)+tube(B)+spot(A,BW)+spot(B,BW)+
-        `<g class="old">${jset(A,0,3)+jset(A,4,5)+jset(B,0,6)+jset(B,4,7)}</g>`+
-        `<g class="new" style="opacity:0">${jset(A,0,1,'ur')+jset(A,4,5)+jset(B,0,4)+jset(B,4,3)}</g>`+
-        `<g class="br">${bottle(36,152,BW,1,0,'sr')}</g>${bottle(89,152,BW,2,0)}${bottle(142,152,BW,4,0)}`+
-        bbtn(100,108,`<path d="M91 104h14l-3-3.5M109 112h-14l3 3.5" style="fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/>`)+
-        tapN(0,100,108)+tapN(1,47,170)+puffN(0,100,40)+puffN(1,ax+11,ay+10);},
-    tracks:()=>{const [ax,ay]=spotXY({x:30,y:4,w:34,n:8,p:7},BW);return [
-      ...tapNTracks(0,.5),...btnTracks(.5),
-      ['.old','opacity',[[0,1],[1.0,1],[1.3,0]]],['.old','transform',[[.9,'scale(1)'],[1.0,'scale(1.04) rotate(-2deg)'],[1.1,'scale(1.04) rotate(2deg)'],[1.3,'scale(.9)']]],
-      ...puffNTracks(0,1.0),
-      ['.new','opacity',[[0,0],[1.35,0],[1.7,1]]],
-      ...tapNTracks(1,2.6),
-      ['.br','transform',[[2.85,T(0,0)],[3.4,T(ax-36,ay-152)],...leaveMove(ax-36,ay-152,4.5)]],
-      ...pour('ur','sr',3.5,.22),...leave('.br',0,0,4.5),...puffNTracks(1,4.75)
-    ];}},
-  remove:{D:6.0, /* three front bottles go first; the locked bottle stays */
-    svg:()=>{const X=[36,89,142],Y=[62,110,158],g=[[1,2,3],[4,5,7],[6,8,1]];
-      let s='';
-      g.forEach((row,r)=>row.forEach((c,k)=>{s+=r===0?`<g class="f-${k}">${bottle(X[k],Y[r],BW,c,0)}</g>`:'';}));
-      return s+`<g class="lay2">${g[1].map((c,k)=>bottle(X[k],Y[1],BW,c,0)).join('')}${lockB(142,110,BW)}</g><g style="opacity:.55">${g[2].map((c,k)=>bottle(X[k],Y[2],BW,c,0)).join('')}</g>`+
-        bbtn(100,24,`<path d="M93 17l14 14M107 17l-14 14" style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round"/>`)+
-        tapN(0,100,24)+X.map((x,k)=>puffN(k,x+11,Y[0]+18)).join('');},
+  extraTime:{D:5.4, /* tap the booster: +30s flies to the timer */
+    svg:()=>`<rect class="trackfill" x="40" y="34" width="120" height="40" rx="20" stroke="var(--c6)" stroke-width="3"/>`+
+      `<circle cx="60" cy="54" r="13" fill="var(--c4)" stroke="#fff" stroke-width="2"/><path d="M60 47v7l5 3" fill="none" stroke="#18203A" stroke-width="2.4" stroke-linecap="round"/>`+
+      `<g class="tm">${jcount(112,54,['00:12','00:42'],'tv')}</g>`+
+      `<g class="btn"><circle class="f8" cx="100" cy="148" r="25"/><text class="bn sm l" x="100" y="148" dy=".35em">+30s</text></g>`+
+      `<text class="fly bn sm" x="100" y="148" dy=".35em" style="opacity:0;fill:var(--c3)">+30s</text>`+tap(100,148),
     tracks:()=>[
-      ...tapNTracks(0,.6),...btnTracks(.6),
-      ...[0,1,2].flatMap(k=>[[`.f-${k}`,'transform',[[1.0+k*.15,'scale(1)'],[1.15+k*.15,'scale(1.12)'],[1.4+k*.15,'scale(.2)']]],[`.f-${k}`,'opacity',[[0,1],[1.25+k*.15,1],[1.4+k*.15,0]]],...puffNTracks(k,1.2+k*.15)]),
-      ['.lay2','opacity',[[0,.55],[1.6,.55],[1.9,1]]]
+      ...tapTracks(.8),
+      ['.btn','transform',[[.9,'scale(1)'],[1.05,'scale(.9)'],[1.25,'scale(1)']]],
+      ['.fly','opacity',[[0,0],[1.1,0],[1.2,1],[1.9,1],[2.0,0]]],['.fly','transform',[[1.1,T(0,0)],[1.95,T(12,-94)]]],
+      ['.tv0','opacity',[[0,1],[1.95,1],[2.05,0]]],['.tv1','opacity',[[0,0],[1.95,0],[2.05,1]]],
+      ['.tm','transform',[[1.95,'scale(1)'],[2.15,'scale(1.2)'],[2.45,'scale(1)']]]
+    ]},
+  remove:{D:5.8, /* tap a block: it is removed at once and the path opens */
+    svg:()=>{const o=DO4;
+      return jboard(o,B64)+jstud(o,2,3,2)+jstud(o,5,0,4)+jblock(o,[[4,2],[5,2]],7,[4,2])+jblock(o,[[0,1],[0,2]],3,[0,1,'x'])+
+        `<g class="bb">${jblock(o,[[2,0]],2,[2,0])}</g><g class="rk">${jblock(o,[[1,1],[2,1],[3,1]],1,[1,1])}</g>`+
+        tap(cc(o,2,1)[0],cc(o,2,1)[1])+puff(cc(o,2,1)[0],cc(o,2,1)[1]);},
+    tracks:()=>[
+      ...tapTracks(.6),
+      ['.rk','transform',[[1.0,'scale(1)'],[1.15,'scale(1.08)'],[1.4,'scale(.2)']]],['.rk','opacity',[[0,1],[1.25,1],[1.4,0]]],
+      ...puffTracks(1.2),
+      ['.bb','transform',[[2.2,T(0,0)],[3.0,T(0,84)],[3.15,T(0,84,1.12)],[3.4,T(0,84,.2)]]],...popTracks('.bb',3.0)
     ]}
 };
 
-/* ---------- play-screen sketch ---------- */
-const HT=[{x:30,y:10,w:46,n:12,p:11},{x:147,y:10,w:46,n:12,p:11},{x:264,y:10,w:46,n:12,p:11}];
-const HBW=30,HX=[44,116,194,266],HY=[318,368,418];
+/* ---------- play-screen sketch: level 23 ---------- */
+const HO={ox:17,oy:114,cs:34};
+const HB=[[2,0,5,1],[0,1,9,3],[2,4,5,2],[0,6,9,4]];
 function fieldSVG(label){
-  const [A,B,C]=HT;
-  const tubes=HT.map(tube).join('')+
-    jset(A,0,1,'hr')+`<g class="h-rest">${jset(A,4,2)+jset(A,8,3)}</g>`+
-    jset(B,0,4)+jset(B,4,3)+jset(B,8,5)+
-    jset(C,0,2)+jset(C,4,6)+jset(C,8,7);
-  const [s0x,s0y]=spotXY(A,HBW),[s1x,s1y]=spotXY(B,HBW);
-  const spots=HT.map(o=>spot(o,HBW)).join('')+bottle(s1x,s1y,HBW,4,2);
-  const tray=`<rect class="slot" x="144" y="236" width="52" height="64" rx="10"/>`+bottle(155,242,HBW,5,0);
-  const grid=[[1,7,2],[2,3,6],[6,8,4],[7,4,1]];
-  let board='';
-  grid.forEach((col,k)=>col.forEach((c,r)=>{
-    const b=bottle(HX[k],HY[r],HBW,c,0,k===0&&r===0?'hs':'');
-    if(k===0&&r===0)board+=`<g class="h-b">${b}</g>`;
-  }));
-  board+=`<g class="h-q" style="opacity:.55">${bottle(HX[0],HY[1],HBW,7,0)}</g><g style="opacity:.55">${bottle(HX[0],HY[2],HBW,2,0)}</g>`+
-    [1,2,3].map(k=>grid[k].map((c,r)=>r?`<g style="opacity:.55">${bottle(HX[k],HY[r],HBW,c,0)}</g>`:bottle(HX[k],HY[r],HBW,c,0)).join('')).join('');
+  const o=HO,cs=o.cs,B=(cells,c,h)=>jblock(o,cells,c,h),S=(c,r,col,x)=>jstud(o,c,r,col,x);
+  const ctr=(c,r)=>cc(o,c,r);
+  const [v1x,v1y]=ctr(3,7),[v2x,v2y]=ctr(3,9),[w1x,w1y]=ctr(5,7),[w2x,w2y]=ctr(5,9),[hx,hy]=ctr(4,8);
+  const [lx,ly]=ctr(4,3),[rx,ry]=ctr(8,2),[px,py]=ctr(6,2);
+  const board=jboard(o,HB)+S(3,0,3,true)+S(5,0,1,true)+S(0,1,4)+S(8,1,6)+S(0,2,3)+S(8,2,1)+S(0,9,2)+S(8,9,7);
+  const blocks=B([[4,0],[3,1],[4,1],[5,1]],2,[3,1])+B([[2,2],[3,2]],1,[3,2])+
+    `<g class="h-pu">${B([[5,2],[6,2]],7,[6,2])}</g>`+
+    B([[0,3]],7,[0,3])+B([[1,3],[2,3]],4,[1,3])+
+    `<g class="h-rd">${B([[6,3],[7,3],[8,3]],1,[8,3])}</g>`+
+    B([[2,4],[3,4],[2,5],[2,6]],6,[3,4])+B([[4,4],[4,5]],7,[4,5])+B([[5,4],[6,4],[6,5],[6,6]],4,[5,4])+
+    B([[0,6],[1,6],[0,7],[1,7]],2,[0,7])+B([[7,6],[8,6],[7,7],[8,7]],7,[8,7]);
+  const elems=B([[3,3],[4,3],[5,3]],'lock')+jcount(lx,ly,['5','4'],'hc')+
+    B([[4,6]],3,[4,6,'x'])+B([[1,8],[2,8],[1,9],[2,9]],1,[2,8,'x'])+B([[6,8],[7,8],[6,9],[7,9]],3,[6,8,'x'])+
+    B([[3,7],[3,8],[3,9]],3,[3,7,'x'])+jarrow(v1x,v1y+12,v2x,v2y+4)+
+    B([[5,7],[5,8],[5,9]],1,[5,7,'x'])+jarrow(w1x,w1y+12,w2x,w2y+4)+
+    B([[4,8],[4,9]],7,[4,9])+jarrow(hx-13,hy,hx+13,hy);
+  const pill=(x,y,w,txt,cls)=>`<rect x="${x}" y="${y}" width="${w}" height="30" rx="15" fill="${RIM}" stroke="#2C2F7A" stroke-width="2"/>`+(txt?`<text class="bn sm${cls?' '+cls:''}" x="${x+w/2+8}" y="${y+15}" dy=".35em">${txt}</text>`:'');
+  const hud=pill(14,10,88,'1100')+`<circle cx="24" cy="25" r="13" fill="var(--c4)" stroke="#fff" stroke-width="2"/><path d="M24 18l2 4.5 4.8.4-3.7 3.1 1.2 4.7-4.3-2.6-4.3 2.6 1.2-4.7-3.7-3.1 4.8-.4z" fill="#fff"/>`+
+    pill(236,10,90,'')+`<text class="bn sm" x="281" y="25" dy=".35em">Level 23</text>`+
+    `<circle cx="32" cy="66" r="15" fill="${RIM}"/><rect x="26" y="59" width="4" height="14" rx="1.5" fill="#fff"/><rect x="34" y="59" width="4" height="14" rx="1.5" fill="#fff"/>`+
+    `<circle cx="308" cy="66" r="15" fill="${RIM}"/><path d="M314 66a6 6 0 1 1-2.2-4.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M313.8 57.5v5h-5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const timer=`<rect x="122" y="51" width="104" height="30" rx="15" fill="${RIM}" stroke="var(--c6)" stroke-width="3"/>`+
+    `<circle cx="128" cy="66" r="16" fill="var(--c4)" stroke="#fff" stroke-width="2"/><path d="M128 57v9l6 3" fill="none" stroke="#C0392B" stroke-width="2.6" stroke-linecap="round"/>`+
+    jcount(184,66,['02:20','02:19','02:18','02:17','02:16','02:15','02:14'],'ht');
   return `<svg viewBox="0 0 340 466" role="img" aria-label="${esc(label)}"><g class="hscene">
-    <g class="part part-A">${tubes}${pin(18,24,'A')}</g>
-    <g class="part part-B">${spots}${pin(18,190,'B')}</g>
-    <g class="part part-C">${tray}${pin(128,268,'C')}</g>
-    <g class="part part-D">${board}${pin(18,342,'D')}</g>
-    ${tapN('h',HX[0]+HBW/2,HY[0]+24)}${puffN('h',s0x+HBW/2,s0y+20)}
+    <g class="part part-C">${board}${pin(8,140,'C')}</g>
+    <g class="part part-D">${blocks}${pin(332,233,'D')}</g>
+    <g class="part part-E">${elems}${pin(8,414,'E')}</g>
+    <g class="part part-A">${hud}${pin(170,25,'A')}</g>
+    <g class="part part-B">${timer}${pin(240,66,'B')}</g>
+    ${tap(px,py).replace('class="tap"','class="tap h-tap"')}${puff(rx,ry).replace('class="smoke"','class="smoke h-smoke"')}
   </g></svg>`;
 }
-/* hero loop: the red bottle goes up and fills, flies off, the left tube drops, the bottle under it becomes free */
+/* hero loop: slide the purple block left, slide the long red block up onto its stud, the lock counter drops 5 → 4 */
 const HERO_D=7.2;
 function heroTracks(){
-  const [sx,sy]=spotXY(HT[0],HBW),dx=sx-HX[0],dy=sy-HY[0];
   return [
     ['.hscene','opacity',[[0,0],[.35,1],[HERO_D-.45,1],[HERO_D,0]]],
-    ...tapNTracks('h',.7),
-    ['.h-b','transform',[[1.0,T(0,0)],[1.6,T(dx,dy)],...leaveMove(dx,dy,3.2)]],
-    ['.h-b','opacity',[[0,1],[3.5,1],[3.7,0]]],
-    ...pour('hr','hs',1.8,.3),...puffNTracks('h',3.45),
-    ['.h-q','opacity',[[0,.55],[1.6,.55],[1.9,1]]],
-    ['.h-rest','transform',[[3.9,T(0,0)],[4.5,T(0,44)]]]
+    ['.h-tap','opacity',[[0,0],[.7,0],[.8,.9],[1.25,0]]],['.h-tap','transform',[[.7,'scale(.5)'],[1.25,'scale(1.35)']]],
+    ['.h-pu','transform',[[1.0,T(0,0)],[1.5,T(-34,0)]]],
+    ['.h-rd','transform',[[2.2,T(0,0)],[2.8,T(0,-34)],[2.95,T(0,-34,1.08)],[3.2,T(0,-34,.2)]]],
+    ['.h-rd','opacity',[[0,1],[3.05,1],[3.2,0]]],
+    ['.h-smoke circle','transform',[[3.0,'scale(.3)'],[3.6,'scale(1.4)']]],['.h-smoke circle','opacity',[[0,0],[3.0,0],[3.15,.95],[3.6,0]]],
+    ['.hc0','opacity',[[0,1],[3.2,1],[3.3,0]]],['.hc1','opacity',[[0,0],[3.2,0],[3.3,1]]],
+    ...[0,1,2,3,4,5].flatMap(i=>[[`.ht${i}`,'opacity',i?[[0,0],[i,0],[i+.05,1],[i+1,1],[i+1.05,0]]:[[0,1],[1,1],[1.05,0]]]]),
+    ['.ht6','opacity',[[0,0],[6,0],[6.05,1]]]
   ];
 }
 
@@ -775,7 +854,7 @@ function gaugeSVG(label){
     <g id="needle"><path class="needle" d="M${GX-4} ${GY}L${GX} ${GY-GR+8}L${GX+4} ${GY}Z"/></g><circle class="hub" cx="${GX}" cy="${GY}" r="10"/>
     ${pin(12,22,'A')}${pin(GX+28,GY+2,'B')}</svg>`;
 }
-const G={swing:!reduceMotion,th:0,t0:0,raf:0,res:null};
+const G={swing:false,th:0,t0:0,raf:0,res:null};
 const PERIOD=1.7,AMP=84;
 const segOf=th=>Math.max(0,Math.min(4,Math.floor((th+90)/36)));
 function gaugeMsg(l){
@@ -836,12 +915,14 @@ function view(l){
 
   /* names reused across sections */
   const N={
-    el1:nm('Hidden Jam','Jam ẩn màu'),el2:nm('Locked Bottle','Chai bị khóa'),el3:nm('Blocked Jam Tube','Ống jam luân phiên'),
-    bo1:nm('Extra Tray','Thêm khay chờ'),bo2:nm('Shuffle','Xáo trộn'),bo3:nm('Remove','Xóa chai')
+    el1:nm('Arrow Block','Khối mũi tên'),el2:nm('Hidden Block','Khối ẩn màu'),el3:nm('X Stud','Chốt chữ X'),
+    el4:nm('Linked Block','Khối liên kết'),el5:nm('Spoon Lock','Khóa thìa'),el6:nm('Frozen Block','Khối đóng băng'),el7:nm('Frozen Stud','Chốt đóng băng'),
+    bo1:nm('Shrink','Thu nhỏ'),bo2:nm('Extra Time','Thêm giờ'),bo3:nm('Remove','Xóa khối')
   };
   const P={ /* plain names for running text and tables */
-    el1:t('Hidden Jam','Jam ẩn màu'),el2:t('Locked Bottle','Chai bị khóa'),el3:t('Blocked Jam Tube','Ống jam luân phiên'),
-    bo1:t('Extra Tray','Thêm khay chờ'),bo2:t('Shuffle','Xáo trộn'),bo3:t('Remove','Xóa chai')
+    el1:t('Arrow Block','Khối mũi tên'),el2:t('Hidden Block','Khối ẩn màu'),el3:t('X Stud','Chốt chữ X'),
+    el4:t('Linked Block','Khối liên kết'),el5:t('Spoon Lock','Khóa thìa'),el6:t('Frozen Block','Khối đóng băng'),el7:t('Frozen Stud','Chốt đóng băng'),
+    bo1:t('Shrink','Thu nhỏ'),bo2:t('Extra Time','Thêm giờ'),bo3:t('Remove','Xóa khối')
   };
   const withEl=t('With elements','Khi gặp yếu tố đặc biệt');
 
@@ -850,45 +931,39 @@ function view(l){
   /* ===== 1. Game mechanics ===== */
   B['gameplay-overview']=
     ent(t('How it plays','Cách chơi'),ul([
-      t(`The player taps a bottle on the board to send it up.`,`Người chơi chạm vào một chai trên bàn chơi để gửi chai lên.`),
-      t(`If the jam at the bottom of a jam tube has the bottle’s color, the bottle goes under that tube and fills with 4 portions of jam. A full bottle is capped and leaves the screen.`,`Nếu jam ở đáy một ống jam cùng màu với chai, chai đi vào dưới ống đó và được rót 4 phần jam. Chai đầy được đóng nắp và rời màn hình.`),
-      t(`If no tube matches, the bottle waits in the waiting tray. It goes up on its own once jam of its color reaches the bottom of a tube.`,`Nếu không ống nào khớp màu, chai ngồi chờ ở khay chờ. Chai tự đi lên khi jam cùng màu xuống tới đáy một ống.`),
-      t(`Goal: fill every bottle and empty every jam tube.`,`Mục tiêu: rót đầy mọi chai và làm trống mọi ống jam.`)
+      t(`The player drags jelly blocks around the board toward the studs.`,`Người chơi kéo các khối thạch trên bàn chơi về phía các chốt.`),
+      t(`A block whose hole lands on a stud of the same color clears from the level.`,`Khối có lỗ khớp vào chốt cùng màu sẽ biến mất khỏi màn.`),
+      t(`Goal: clear every block before the timer runs out.`,`Mục tiêu: dọn hết mọi khối trước khi hết giờ.`)
     ]))+
     ent(t('Win and lose','Thắng và thua'),params([
-      [t('Win','Thắng'),t(`Every bottle is filled. Every jam tube is empty.`,`Mọi chai đã được rót đầy. Mọi ống jam đã trống.`)],
-      [t('Lose','Thua'),t(`The waiting tray is full and no bottle the player can tap matches the bottom jam of an open tube. The check runs once every pour has finished. The revive offer shows first.`,`Khay chờ đã đầy và không còn chai nào người chơi chạm được khớp với jam ở đáy một ống đang mở. Chỉ kiểm tra sau khi mọi lượt rót đã xong. Lựa chọn hồi sinh hiện trước.`)]
+      [t('Win','Thắng'),t(`Every block is cleared from the level.`,`Mọi khối đã được dọn khỏi màn.`)],
+      [t('Lose','Thua'),t(`The timer reaches 0 before every block is cleared. The revive offer shows first.`,`Đồng hồ về 0 khi chưa dọn hết khối. Lựa chọn hồi sinh hiện trước.`)]
+    ]))+
+    ent(nm('Timer','Đồng hồ'),ul([
+      t(`Each level has its own time limit, set in the level config.`,`Mỗi màn có giới hạn thời gian riêng, đặt trong level config.`),
+      t(`The timer counts down on the HUD. At 0 the level is over.`,`Đồng hồ đếm ngược trên HUD. Về 0 thì màn kết thúc.`),
+      t(`Time per level: ${tbd}.`,`Thời gian mỗi màn: ${tbd}.`),
+      t(`More time comes from revive (+1 min 30 s) or the ${P.bo2} booster (+30 s).`,`Có thêm giờ khi hồi sinh (+1 phút 30 giây) hoặc dùng công cụ ${P.bo2} (+30 giây).`)
     ]));
 
-
   B['main-game-mechanics']=
-    ent(nm('Jam tube','Ống jam'),ul([
-      t(`Tall tube on the machine at the top of the screen, holding a column of jam in layers. Early levels have 1 tube; the 2nd tube is introduced soon after. Tubes per level: ${tbd}.`,`Ống cao gắn trên máy ở phía trên màn hình, chứa cột jam xếp thành lớp. Các màn đầu có 1 ống; ống thứ 2 được giới thiệu ngay sau đó. Số ống mỗi màn: ${tbd}.`),
-      t(`Jam comes in sets of 4 portions of one color. The order of the sets is set per level.`,`Jam xếp thành từng bộ 4 phần cùng màu. Thứ tự các bộ đặt theo từng màn.`),
-      t(`Only the bottom set, at the nozzle, can pour.`,`Chỉ bộ ở đáy, sát vòi, mới rót được.`),
-      t(`When a set has poured, the whole column drops by one set. The next set is now at the bottom.`,`Khi một bộ rót xong, cả cột jam tụt xuống một bộ. Bộ kế tiếp thành bộ ở đáy.`),
-      t(`An empty tube stays on screen and takes no more bottles.`,`Ống đã trống vẫn ở trên màn hình và không nhận thêm chai.`)
+    ent(nm('Block','Khối'),ul([
+      t(`Jelly block on the board. 8 colors.`,`Khối thạch trên bàn chơi. Có 8 màu.`),
+      t(`Shape and size are set per level: 1 cell, bars, L, T, squares…`,`Hình dạng và kích cỡ đặt theo từng màn: 1 ô, thanh dài, chữ L, chữ T, hình vuông…`),
+      t(`Each block has 1 hole, in one of its corner cells. The hole position is set per level.`,`Mỗi khối có 1 lỗ, nằm ở một ô góc của khối. Vị trí lỗ đặt theo từng màn.`),
+      t(`The player taps and drags a block freely, cell by cell.`,`Người chơi chạm và kéo khối tự do, theo từng ô.`),
+      t(`A block cannot pass through walls, other blocks or studs.`,`Khối không đi xuyên qua tường, khối khác hay chốt.`),
+      t(`Hole aligned on a stud of the same color: the block clears.`,`Lỗ đặt đúng lên chốt cùng màu: khối biến mất.`)
     ]))+
-    ent(nm('Fill spot','Ô rót'),ul([
-      t(`One spot under each tube’s nozzle.`,`Mỗi ống có 1 ô ngay dưới vòi.`),
-      t(`A bottle in the spot fills with 4 portions, one at a time. Then it is capped and leaves.`,`Chai ở ô rót được rót 4 phần, từng phần một. Sau đó chai được đóng nắp và rời đi.`),
-      t(`While a bottle fills, the spot is busy. Another bottle of the same color goes to the tray and comes back after.`,`Khi đang rót, ô bận. Chai cùng màu khác vào khay chờ và quay lại sau.`)
+    ent(nm('Stud','Chốt'),ul([
+      t(`Round peg fixed on a board cell. 8 colors, same as blocks.`,`Chốt tròn cố định trên một ô của bàn. 8 màu, giống màu khối.`),
+      t(`Stud positions are set per level.`,`Vị trí chốt đặt theo từng màn.`),
+      t(`A stud only accepts a block of its own color.`,`Chốt chỉ nhận khối cùng màu.`),
+      t(`When every block of a color is cleared, every stud of that color clears too.`,`Khi mọi khối của một màu đã được dọn, mọi chốt màu đó cũng biến mất.`)
     ]))+
-    ent(nm('Bottle','Chai'),ul([
-      t(`Empty container (a soda can in the reference). Its color shows on the can, or on the cap and outline in the sketches. 8 colors.`,`Vật chứa rỗng (lon nước ngọt trong hình tham khảo). Màu hiện trên lon, hoặc ở nắp và viền trong các hình minh họa. 8 màu.`),
-      t(`Bottles lie in a pile on the board, in layers. A bottle is free when no bottle rests on it. Only free bottles can be tapped. When a bottle goes, the ones it was resting on may become free.`,`Chai nằm thành đống trên bàn chơi, theo nhiều lớp. Chai không bị chai nào đè lên là chai tự do. Chỉ chai tự do mới chạm được. Khi một chai đi, các chai nằm dưới nó có thể trở thành tự do.`),
-      t(`Bottle layout and colors are set per level.`,`Vị trí và màu chai đặt theo từng màn.`),
-      t(`When the player taps a bottle:`,`Khi người chơi chạm vào chai:`)+ol([
-        t(`An open tube has the bottle’s color at the bottom and a free fill spot: the bottle goes there. Two tubes match: the left one.`,`Có ống đang mở với jam cùng màu ở đáy và ô rót còn trống: chai vào ô đó. Hai ống cùng khớp: chọn ống bên trái.`),
-        t(`Otherwise: the bottle goes to the first free slot of the waiting tray, from the left.`,`Nếu không: chai vào ô trống đầu tiên của khay chờ, tính từ trái.`),
-        t(`Tray full: the bottle shakes and stays on the board.`,`Khay đã đầy: chai rung nhẹ và ở lại bàn chơi.`)
-      ])
-    ]))+
-    ent(nm('Waiting tray','Khay chờ'),ul([
-      t(`Row of slots between the machine and the board. 1 slot at the start of a level.`,`Hàng ô nằm giữa máy và bàn chơi. Đầu màn có 1 ô.`),
-      t(`Each ${P.bo1} booster adds 1 slot. Maximum 5.`,`Mỗi lần dùng công cụ ${P.bo1} thêm 1 ô. Tối đa 5 ô.`),
-      t(`A bottle in the tray goes up on its own when its color reaches the bottom of an open tube and the fill spot is free. Several match: the leftmost bottle goes first.`,`Chai trong khay tự đi lên khi màu của nó xuống tới đáy một ống đang mở và ô rót trống. Nhiều chai cùng khớp: chai bên trái đi trước.`),
-      t(`A full tray with no match ends the level (see Lose).`,`Khay đầy mà không chai nào khớp thì thua màn (xem mục Thua).`)
+    ent(nm('Board','Bàn chơi'),ul([
+      t(`Grid of cells with walls around it. The shape is set per level.`,`Lưới ô có tường bao quanh. Hình dạng đặt theo từng màn.`),
+      t(`Example: level 23 in the sketch at the top is 9 × 10 cells.`,`Ví dụ: màn 23 ở hình đầu trang có kích thước 9 × 10 ô.`)
     ]));
 
   /* FIXED: 1.3 is shared logic across projects. Keep it as it is and only change the numbers. */
@@ -900,7 +975,7 @@ function view(l){
   const kv=pairs=>`<dl class="kv">${pairs.map(([k,v])=>`<div class="blk"><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
   const lead=x=>`<p class="lead">${x}</p>`;
 
-  /* 1.3 order: hearts, element unlock progress, win screen bonus, level loop back, revive */
+  /* 1.3 order: hearts, element unlock progress, level loop back, revive */
   B['additional-mechanics']=
     sys(nm('Heart system (lives)','Hệ thống tim'),
       lead(t(`Limits how often the player can lose and replay. Lives refill over time.`,
@@ -936,7 +1011,7 @@ function view(l){
            <div class="upm-w bar"><span class="pinl upm-pin">A</span><div class="upm-bar"><div class="upm-fill"></div><span class="upm-n">3/5</span></div></div>
            <div class="upm-w"><span class="pinl upm-pin">B</span><div class="upm-box">${cap(7,'?')}</div></div>
          </div>
-         <p class="upm-cap">${t('Sketch: the bar after level 7 in the example below.','Minh họa: thanh sau màn 7 trong ví dụ bên dưới.')}</p>
+         <p class="upm-cap">${t('Sketch: the bar after level 9 in the example below.','Minh họa: thanh sau màn 9 trong ví dụ bên dưới.')}</p>
          <ul class="parts">
            <li><span class="pinl" data-nosearch>A</span><span><b>${nm('Progress bar','Thanh tiến độ')}</b><span class="d">${t(
              `Green fill, <code>{current}/{total}</code> centered.`,
@@ -955,48 +1030,13 @@ function view(l){
       panel(t('Example','Ví dụ'),
         `<div class="lvgrid">
            <div class="lvrow blk"><span class="lvk">${t('Progress bar shows','Thanh tiến độ hiện')}</span><div class="lvcells">${
-             [5,6,7,8,9].map((n,i)=>`<span class="fr">${i+1}/5<span class="sr"> ${t('after level','sau màn')} ${n}, </span></span>`).join('')}<span></span></div></div>
+             [7,8,9,10,11].map((n,i)=>`<span class="fr">${i+1}/5<span class="sr"> ${t('after level','sau màn')} ${n}, </span></span>`).join('')}<span></span></div></div>
            <div class="lvrow blk"><span class="lvk">${t('Level','Màn')}</span><div class="lvcells">${
-             [5,6,7,8,9,10].map(n=>`<span class="sq">${n}<span class="sr">, </span></span>`).join('')}</div></div>
+             [7,8,9,10,11,12].map(n=>`<span class="sq">${n}<span class="sr">, </span></span>`).join('')}</div></div>
            <div class="lvrow blk"><span class="lvk">${t('New element unlocks','Mở yếu tố mới')}</span><div class="lvcells">${
-             [5,6,7,8,9,10].map(n=>n===5||n===10?`<span class="nw">${t('New','Mới')}<span class="sr"> ${t('at level','ở màn')} ${n}, </span></span>`:'<span></span>').join('')}</div></div>
+             [7,8,9,10,11,12].map(n=>n===7||n===12?`<span class="nw">${t('New','Mới')}<span class="sr"> ${t('at level','ở màn')} ${n}, </span></span>`:'<span></span>').join('')}</div></div>
          </div>`+
-        `<p>${t(`Elements unlock at 5 and 10. After level 7 the bar shows “3/5”.`,`Yếu tố mở ở màn 5 và 10. Sau màn 7 thanh hiện “3/5”.`)}</p>`))+
-
-    sys(nm('Win screen bonus','Thưởng thêm ở màn hình thắng'),
-      lead(t(`On the Victory screen, a swinging needle picks a multiplier for the level’s coins. The player watches a rewarded ad to get it.`,
-             `Ở màn hình chiến thắng, kim lắc chọn hệ số nhân cho số xu của màn. Người chơi xem quảng cáo có thưởng để nhận.`))+
-      panel(t('Try it','Thử ngay'),
-        `<div class="gauge${G.swing?'':' stopped'}" id="gauge">${gaugeSVG(t('Half-circle bonus gauge with five segments: ×2, ×3, ×5, ×3, ×2, and a needle from the bottom center.','Đồng hồ thưởng hình bán nguyệt gồm năm ô: ×2, ×3, ×5, ×3, ×2, kim nằm ở giữa phía dưới.'))}
-           <p class="gbase">${t(`Base reward: ${GBASE} coins`,`Phần thưởng gốc: ${GBASE} xu`)}</p></div>
-         <div class="gctl" data-nosearch>
-           <span><span class="pinl" aria-hidden="true">C</span><button type="button" class="gbtn primary" id="gBonus">${G.swing?ui.bonus:(G.res?ui.again:ui.swing)}</button></span>
-           <span><span class="pinl" aria-hidden="true">D</span><button type="button" class="gbtn" id="gNext">${ui.next}</button></span>
-         </div>
-         <p class="gres" id="gRes" aria-live="polite" data-nosearch>${gaugeMsg(l)}</p>`,
-        t('Sketch only. Speed and odds are not final.','Chỉ là minh họa. Tốc độ và tỉ lệ chưa chốt.'))+
-      panel(t('Parts','Thành phần'),
-        `<ul class="parts">
-          <li><span class="pinl" data-nosearch>A</span><span><b>${nm('Bonus gauge','Đồng hồ thưởng')}</b><span class="d">${t(`Half circle: ×2 | ×3 | ×5 | ×3 | ×2.`,`Bán nguyệt: ×2 | ×3 | ×5 | ×3 | ×2.`)}</span></span></li>
-          <li><span class="pinl" data-nosearch>B</span><span><b>${nm('Needle','Kim chỉ')}</b><span class="d">${t(`Swings left and right non-stop.`,`Lắc qua lại liên tục.`)}</span></span></li>
-          <li><span class="pinl" data-nosearch>C</span><span><b>${nm('Bonus button','Nút Thưởng thêm')}</b><span class="d">${t(`Video icon. Stops the needle, plays the ad.`,`Có biểu tượng video. Dừng kim, phát quảng cáo.`)}</span></span></li>
-          <li><span class="pinl" data-nosearch>D</span><span><b>${nm('Next Level button','Nút Màn tiếp theo')}</b><span class="d">${t(`Base reward only.`,`Chỉ nhận thưởng gốc.`)}</span></span></li>
-        </ul>
-        <p class="upm-cap">${t('Placed between the element unlock progress bar and the buttons.','Nằm giữa thanh tiến độ mở khóa yếu tố và các nút.')}</p>`)+
-      panel(t('Flow','Diễn biến'),ol([
-        t(`Screen opens with the base reward (${GBASE}). Needle swings.`,`Màn hình mở với thưởng gốc (${GBASE}). Kim lắc.`),
-        t(`Tap <b>Bonus</b>: needle stops on the multiplier.`,`Chạm <b>Thưởng thêm</b>: kim dừng ở hệ số nhân.`),
-        t(`1 s pause, then the ad plays.`,`Chờ 1 giây, rồi phát quảng cáo.`),
-        t(`Ad ends: coins × multiplier (×3 → ${GBASE*3}).`,`Hết quảng cáo: xu × hệ số (×3 → ${GBASE*3}).`)
-      ]))+
-      panel(t('Edge cases','Trường hợp đặc biệt'),
-        table(t('Win screen bonus edge cases','Trường hợp đặc biệt của thưởng thêm'),[t('Case','Trường hợp'),t('Result','Kết quả')],[
-          [t('Ad closed early or failed','Quảng cáo tắt sớm hoặc lỗi'),t('Base reward only','Chỉ nhận thưởng gốc')],
-          [t('No ad available','Không có quảng cáo'),t('Bonus button disabled','Nút Thưởng thêm bị mờ')],
-          [t('Daily ad limit reached','Hết lượt quảng cáo trong ngày'),t('Hide gauge and Bonus, re-center','Ẩn đồng hồ và nút Thưởng thêm, căn giữa lại')],
-          [t('1 s pause and ad','1 giây chờ và lúc quảng cáo chạy'),t('All input locked','Khóa mọi thao tác')]
-        ],'compact')+
-        `<p class="note">${t(`Swing speed, segment multipliers and the daily ad limit are remote config.`,`Tốc độ kim, hệ số từng ô và giới hạn quảng cáo mỗi ngày nằm trong cấu hình từ xa.`)}</p>`))+
+        `<p>${t(`${P.el1} unlocks at 7, ${P.el2} at 12. After level 9 the bar shows “3/5”.`,`${P.el1} mở ở màn 7, ${P.el2} ở màn 12. Sau màn 9 thanh hiện “3/5”.`)}</p>`))+
 
     sys(nm('Level loop back','Lặp lại màn chơi'),
       lead(t(`After the last level, earlier levels replay. The level number keeps counting up.`,
@@ -1011,19 +1051,19 @@ function view(l){
         table(t('Level loop back examples','Ví dụ lặp lại màn'),[t('Shown level','Màn hiển thị'),'40','41','42','…','60','61'],
           [[t('Content level','Màn nội dung'),'40','21','22','…','40','21']],'compact'))+
       panel(t('Rules','Quy tắc'),ul([
-        t(`All UI and level checks (offers, Skip Level, remote config) use the shown level.`,`Mọi giao diện và điều kiện theo màn (ưu đãi, Bỏ qua màn, cấu hình từ xa) dùng màn hiển thị.`),
-        t(`Looped levels play like any level: same rewards, bonus, hearts, revive.`,`Màn lặp chơi như mọi màn: cùng thưởng, thưởng thêm, tim, hồi sinh.`),
+        t(`All UI and level checks (offers, remote config) use the shown level.`,`Mọi giao diện và điều kiện theo màn (ưu đãi, cấu hình từ xa) dùng màn hiển thị.`),
+        t(`Looped levels play like any level: same timer, rewards, hearts, revive.`,`Màn lặp chơi như mọi màn: cùng đồng hồ, thưởng, tim, hồi sinh.`),
         t(`An update that adds levels: players inside the new range play the real level.`,`Bản cập nhật thêm màn: người chơi trong khoảng màn mới chơi đúng màn đó.`),
         t(`Analytics logs both shown and content level.`,`Analytics ghi cả màn hiển thị và màn nội dung.`)
       ])+`<p class="note">${t(`Remote config: <code>level_loop_last_level</code>, <code>level_loop_start_level</code>.`,`Cấu hình từ xa: <code>level_loop_last_level</code>, <code>level_loop_start_level</code>.`)}</p>`))+
 
     sys(nm('Revive','Hồi sinh'),
-      lead(t(`When the player loses, one more chance to continue the same attempt. Shows before the lose screen.`,
-             `Khi thua, người chơi có thêm một cơ hội chơi tiếp lượt đang chơi. Hiện trước màn hình thua.`))+
+      lead(t(`When the timer hits 0, one more chance to continue the same attempt with extra time. Shows before the lose screen.`,
+             `Khi đồng hồ về 0, người chơi có thêm một cơ hội chơi tiếp lượt đang chơi với thời gian cộng thêm. Hiện trước màn hình thua.`))+
       tiles([
+        [t('+1:30','+1:30'),t('Time added per revive','Thời gian cộng thêm mỗi lần hồi sinh'),'hot'],
         ['900',t('Coins for the 1st revive','Xu cho lần hồi sinh đầu')],
-        ['1',t('Revive by ad per attempt','Lần hồi sinh bằng quảng cáo mỗi lượt')],
-        [t(`1 free`,`1 miễn phí`),t(`${P.bo3} used on revive`,`${P.bo3} dùng khi hồi sinh`),'hot']
+        ['1',t('Revive by ad per attempt','Lần hồi sinh bằng quảng cáo mỗi lượt')]
       ])+
       panel(t('Options','Lựa chọn'),
         table(t('Revive options','Lựa chọn hồi sinh'),[t('Option','Lựa chọn'),t('Cost','Giá'),t('Limit and notes','Giới hạn và ghi chú')],[
@@ -1032,22 +1072,24 @@ function view(l){
           [t('Give up','Bỏ cuộc'),dash,t('→ Lose screen','→ Màn hình thua')]
         ],'compact'))+
       panel(t('On revive','Khi hồi sinh'),ul([
-        t(`Continue from where it stopped. No restart, no life lost.`,`Chơi tiếp từ chỗ dừng. Không chơi lại, không mất tim.`),
-        t(`A free ${P.bo3} is used at once.`,`Dùng ngay 1 ${P.bo3} miễn phí.`)+' '+
-          t(`On revive it removes 3 bottles from the waiting tray, not the board, with their jam sets, so the tray has room again.`,`Khi hồi sinh, công cụ xóa 3 chai trong khay chờ (không phải trên bàn chơi) cùng các bộ jam tương ứng, để khay có chỗ trống trở lại.`),
-        t(`It is not taken from the inventory, and works even if ${P.bo3} is not owned or unlocked.`,`Không trừ vào kho, và vẫn dùng được dù chưa có hay chưa mở ${P.bo3}.`),
+        t(`Each revive adds 1 min 30 s to the timer (<code>revive_extra_time_seconds</code> = 90).`,`Mỗi lần hồi sinh cộng 1 phút 30 giây vào đồng hồ (<code>revive_extra_time_seconds</code> = 90).`),
+        t(`Continue from where it stopped. The board stays as it was. No restart, no life lost.`,`Chơi tiếp từ chỗ dừng. Bàn chơi giữ nguyên. Không chơi lại, không mất tim.`),
         t(`Revive count and price reset on a new attempt.`,`Số lần và giá hồi sinh tính lại khi bắt đầu lượt mới.`),
-        t(`Ad or purchase fails: back to the popup. Input locked while the booster plays.`,`Quảng cáo hoặc giao dịch lỗi: quay lại popup. Khóa thao tác khi công cụ đang chạy.`)
+        t(`Ad or purchase fails: back to the popup. The timer stays at 0 while the popup is open.`,`Quảng cáo hoặc giao dịch lỗi: quay lại popup. Đồng hồ giữ ở 0 khi popup đang mở.`)
       ])));
 
   /* one caption per entry in DEMOS, same keys */
   const DCAP={
-    hiddenJam:t('Red fills and the column drops. The grey set reaches the bottom and shows green, so the green bottle can fill.','Rót xong chai đỏ, cột jam tụt xuống. Bộ xám xuống tới đáy và hiện màu xanh lá, chai xanh lá được rót.'),
-    lockedBottle:t('The bottle on top goes and the locked bottle is free: it shows 2. Two more bottles go up, the lock opens and it can go.','Chai đè bên trên đi, chai bị khóa được giải phóng và hiện số 2. Gửi thêm 2 chai, khóa mở và chai được gửi lên.'),
-    blockedTube:t('Two bottles go up and the counter hits 0. The left tube closes, the right tube opens, and the counter starts again from 2.','Gửi 2 chai, bộ đếm về 0. Ống trái đóng, ống phải mở, bộ đếm bắt đầu lại từ 2.'),
-    extraTray:t('The single tray slot is full. The player taps the booster, a 2nd slot opens and a bottle goes into it.','Ô khay chờ duy nhất đã đầy. Người chơi chạm vào công cụ, ô thứ 2 mở ra và một chai vào ô đó.'),
-    shuffle:t('No tube matches a free bottle. The jam mixes, red and yellow land at the bottom, and the red bottle fills.','Không ống nào khớp chai tự do. Jam được xáo lại, đỏ và vàng xuống đáy, chai đỏ được rót.'),
-    remove:t('The player taps the booster. The 3 bottles on the top layer are removed. The locked bottle stays, since it comes last.','Người chơi chạm vào công cụ. 3 chai ở lớp trên cùng bị xóa. Chai bị khóa vẫn còn, vì nó xếp cuối cùng.')
+    arrow:t('Pushed sideways, the arrow block does not move. It slides along its arrow onto the stud.','Kéo ngang thì khối mũi tên không nhúc nhích. Khối trượt theo mũi tên vào chốt.'),
+    hiddenBlock:t('The grey block moves but cannot clear. Two blocks clear, the number hits 0, its color shows and it clears.','Khối xám di chuyển được nhưng không dọn được. Dọn 2 khối, con số về 0, khối hiện màu và được dọn.'),
+    frozenBlock:t('The frozen block does not move. Two blocks clear, the ice breaks and it slides onto its stud.','Khối đóng băng không di chuyển. Dọn 2 khối, lớp băng vỡ và khối trượt vào chốt.'),
+    frozenStud:t('The frozen stud stops the yellow block. Two blocks clear, the ice melts and the block fits.','Chốt đóng băng chặn khối vàng. Dọn 2 khối, băng tan và khối khớp vào chốt.'),
+    xStud:t('A round hole is blocked by the X stud. The X-hole block fits and clears.','Lỗ tròn bị chốt chữ X chặn lại. Khối có lỗ chữ X khớp vào và biến mất.'),
+    linked:t('The pair moves as one. Red clears, the link breaks, blue moves on alone.','Cặp khối di chuyển cùng nhau. Khối đỏ biến mất, liên kết gỡ, khối xanh đi tiếp một mình.'),
+    spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
+    shrink:t('The player taps the big block. It shrinks to one cell at its hole and fits through the gap.','Người chơi chạm vào khối lớn. Khối thu về 1 ô tại vị trí lỗ và đi lọt qua khe.'),
+    extraTime:t('The player taps the booster. 30 seconds are added to the timer.','Người chơi chạm vào công cụ. Đồng hồ được cộng 30 giây.'),
+    remove:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
   const demo=(k,c)=>{const cp=c||DCAP[k]||'';return DEMOS[k]?`<figure class="demo" data-demo="${k}"><div class="demo-box"><svg viewBox="0 0 200 196" role="img" aria-label="${esc(cp.replace(/<[^>]+>/g,''))}"><g class="scene">${DEMOS[k].svg()}</g></svg>`+
@@ -1055,81 +1097,93 @@ function view(l){
     `<figcaption>${cp}</figcaption></figure>`:'';};
   const fsSee=`<a href="#lock-fail-safe">${t('See “Fail-safe”.','Xem mục “Cơ chế chống kẹt”.')}</a>`;
   const fsLine=(en,vi)=>`<b>${t('Fail-safe','Chống kẹt')}:</b> ${t(en,vi)} ${fsSee}`;
-  const unl=t(`Unlocks at level ${tbd}`,`Mở ở màn ${tbd}`);
-  const unlB=[unl,t(`3 free`,`Tặng 3 lượt`)];
-  const sent=t(`Counts every bottle the player sends up from the board, to a fill spot or to the tray. Bottles that move from the tray to a tube on their own do not count.`,`Tính mọi chai người chơi gửi lên từ bàn chơi, vào ô rót hay vào khay chờ. Chai tự đi từ khay lên ống không được tính.`);
   B['elements-mechanics']=
     ent(N.el1,ul([
-      t(`A set of jam whose color is hidden: 4 grey portions with a “?”.`,`Một bộ jam bị ẩn màu: 4 phần màu xám có dấu “?”.`),
-      t(`It moves down its tube like any other set.`,`Bộ này tụt xuống trong ống như các bộ khác.`),
-      t(`Its color shows only when it reaches the bottom of the tube, at the nozzle.`,`Bộ chỉ hiện màu khi xuống tới đáy ống, sát vòi.`),
-      t(`From then on it is a normal set. A bottle of its color can fill from it, and tray bottles of its color go up on their own.`,`Từ lúc đó bộ là bộ thường. Chai cùng màu được rót từ bộ này, chai cùng màu trong khay tự đi lên.`),
-      t(`The player cannot plan with it, so bottles of its color may have to wait in the tray. Level design keeps tray room for this.`,`Người chơi không đoán trước được màu, nên chai cùng màu có thể phải chờ trong khay. Thiết kế màn cần chừa chỗ trong khay cho việc này.`)
-    ]),unl,demo('hiddenJam'))+
+      t(`A block that moves along one axis only: up–down or left–right.`,`Khối chỉ di chuyển theo một trục: lên–xuống hoặc trái–phải.`),
+      t(`A white two-way arrow on top of the block shows the axis.`,`Mũi tên hai chiều màu trắng trên khối cho biết trục di chuyển.`),
+      t(`Dragging across the axis does nothing.`,`Kéo theo hướng khác trục thì khối không di chuyển.`),
+      t(`Clears like a normal block once its hole lands on a matching stud.`,`Biến mất như khối thường khi lỗ khớp vào chốt cùng màu.`)
+    ]),unlock(7),demo('arrow'))+
     ent(N.el2,ul([
-      t(`A bottle on the board with a padlock. Its color shows, but it cannot be sent while locked. Tapped: it shakes.`,`Chai trên bàn chơi có ổ khóa. Vẫn thấy màu, nhưng không gửi lên được khi còn khóa. Chạm vào: chai rung nhẹ.`),
-      `<b>${t('Step 1: unblock','Bước 1: giải phóng')}.</b> `+t(`The bottles resting on it must be sent first. No counter shows yet.`,`Phải gửi hết các chai đang đè lên nó. Lúc này chưa hiện bộ đếm.`),
-      `<b>${t('Step 2: counter','Bước 2: bộ đếm')}.</b> `+t(`Once it is free, a counter shows on it: the number of bottles x the player must still send. x is set per level (${tbd}).`,`Khi chai đã tự do, bộ đếm hiện trên chai: số chai x người chơi cần gửi lên thêm. x đặt theo từng màn (${tbd}).`),
-      sent,
-      t(`At 0 the padlock opens. The bottle is a normal bottle from then on.`,`Về 0 thì ổ khóa mở. Từ lúc đó chai là chai thường.`),
-      t(`The bottles under it stay blocked until it has been sent.`,`Các chai nằm dưới nó vẫn bị chặn cho tới khi chai này được gửi lên.`),
-      fsLine(`the counter cannot reach 0 because too few bottles are left to send.`,`bộ đếm không thể về 0 vì còn quá ít chai để gửi.`)
-    ]),unl,demo('lockedBottle'))+
+      t(`A block whose color is hidden under a grey cover. Its hole still shows.`,`Khối bị che màu bằng một lớp xám. Lỗ của khối vẫn hiện.`),
+      t(`It moves freely, like a normal block.`,`Khối di chuyển tự do, như khối thường.`),
+      t(`It cannot be cleared while its color is hidden.`,`Khối không dọn được khi màu còn bị che.`),
+      t(`A number on top shows how many blocks must clear before its color shows.`,`Con số trên khối cho biết cần dọn bao nhiêu khối nữa thì khối hiện màu.`),
+      t(`The number counts down each time the player clears another block.`,`Con số giảm mỗi lần người chơi dọn được một khối khác.`),
+      t(`At 0 the cover goes and the color shows. The block is a normal block from then on.`,`Về 0 thì lớp che biến mất và khối hiện màu. Từ lúc đó khối là khối thường.`),
+      fsLine(`the countdown cannot reach 0 because too few other blocks are left.`,`con số không thể về 0 vì còn quá ít khối khác.`)
+    ]),unlock(12),demo('hiddenBlock'))+
     ent(N.el3,ul([
-      t(`A pair of 2 jam tubes that take turns. One is open, the other is closed by a lid.`,`Một cặp 2 ống jam thay phiên nhau. Một ống mở, ống kia bị nắp đóng lại.`),
-      t(`A counter on the pair shows how many bottles x the player must send before they swap. x is set per level (${tbd}).`,`Bộ đếm trên cặp ống cho biết người chơi cần gửi bao nhiêu chai x thì hai ống đổi trạng thái. x đặt theo từng màn (${tbd}).`),
-      sent,
-      t(`At 0 the open tube closes, the closed tube opens, and the counter starts again from x. This repeats until both tubes are empty.`,`Về 0 thì ống đang mở đóng lại, ống đang đóng mở ra, bộ đếm bắt đầu lại từ x. Lặp lại tới khi cả hai ống trống.`),
-      t(`A closed tube does not pour and takes no bottle. Its jam stays where it is. Bottles of its color wait in the tray.`,`Ống đang đóng không rót và không nhận chai. Jam trong ống giữ nguyên. Chai cùng màu chờ trong khay.`),
-      t(`A bottle still filling when the counter hits 0 finishes first. Then the tubes swap.`,`Chai đang rót dở khi bộ đếm về 0 được rót xong trước. Sau đó hai ống mới đổi.`),
-      t(`One tube already empty: the pair stops swapping and the other tube stays open.`,`Một ống đã trống: cặp ống ngừng đổi, ống còn lại luôn mở.`),
-      fsLine(`the tray is full and the only jam that matches the tray bottles sits in the closed tube.`,`khay đã đầy và jam khớp với các chai trong khay chỉ nằm trong ống đang đóng.`)
-    ]),unl,demo('blockedTube'))+
+      t(`A stud shaped like an X. Only fits a block with an X-shaped hole.`,`Chốt hình chữ X. Chỉ khớp với khối có lỗ hình chữ X.`),
+      t(`The player must match both shape and color to clear the block.`,`Người chơi phải khớp cả hình dạng lẫn màu để dọn khối.`),
+      t(`A block with a round hole is blocked by an X stud, like any stud it does not fit.`,`Khối có lỗ tròn bị chốt chữ X chặn lại, như mọi chốt không khớp khác.`),
+      t(`Clears with the rest of its color, like a normal stud.`,`Biến mất cùng các chốt cùng màu, như chốt thường.`)
+    ]),unlock(17),demo('xStud'))+
+    ent(N.el4,ul([
+      t(`Blocks of different colors stuck together along their edges.`,`Các khối khác màu dính vào nhau theo cạnh.`),
+      t(`The group moves as one. Any piece hitting a wall, block or stud stops the whole group.`,`Cả nhóm di chuyển cùng nhau. Một khối trong nhóm bị tường, khối hay chốt chặn thì cả nhóm dừng.`),
+      t(`A link breaks only when a block it joins is cleared.`,`Liên kết chỉ gỡ khi một khối nó nối được dọn.`),
+      t(`Blocks still touching each other keep their link.`,`Các khối vẫn còn dính cạnh nhau thì giữ liên kết.`),
+      t(`If the cleared block was the only one holding the others together, the link disappears.`,`Nếu khối vừa dọn là khối duy nhất nối các khối khác, liên kết biến mất.`)
+    ]),unlock(22),demo('linked'))+
+    ent(N.el5,ul([
+      t(`A pair: a spoon on one block and a locked hole on another block.`,`Một cặp: thìa nằm trên một khối, lỗ khóa nằm trên một khối khác.`),
+      `<b>${t('Spoon','Thìa')}:</b> `+t(`a spoon icon on the block. 8 colors. It activates when the block holding it clears.`,`biểu tượng thìa trên khối. 8 màu. Kích hoạt khi khối chứa nó được dọn.`),
+      `<b>${t('Locked hole','Lỗ khóa')}:</b> `+t(`locks the block it sits on in place. 8 colors.`,`khóa chặt khối chứa nó tại chỗ. 8 màu.`),
+      t(`An active spoon unlocks the locked hole of its own color on its own.`,`Thìa đã kích hoạt tự mở lỗ khóa cùng màu.`),
+      t(`Once unlocked, the block moves freely again.`,`Khi đã mở, khối lại di chuyển tự do.`)
+    ]),unlock(27),demo('spoon'))+
+    ent(N.el6,ul([
+      t(`A block under a layer of ice. Its color shows.`,`Khối bị phủ một lớp băng. Vẫn thấy màu của khối.`),
+      t(`It cannot move while frozen.`,`Khối không di chuyển được khi còn đóng băng.`),
+      t(`A number on top shows how many blocks must clear before it unfreezes.`,`Con số trên khối cho biết cần dọn bao nhiêu khối nữa thì tan băng.`),
+      t(`The number counts down each time the player clears another block.`,`Con số giảm mỗi lần người chơi dọn được một khối khác.`),
+      t(`At 0 the ice breaks. The block is a normal block from then on.`,`Về 0 thì lớp băng vỡ. Từ lúc đó khối là khối thường.`),
+      fsLine(`the countdown cannot reach 0 because too few other blocks are left.`,`con số không thể về 0 vì còn quá ít khối khác.`)
+    ]),unlock(32),demo('frozenBlock'))+
+    ent(N.el7,ul([
+      t(`A stud under a layer of ice. Its color shows.`,`Chốt bị phủ một lớp băng. Vẫn thấy màu của chốt.`),
+      t(`It cannot be used to clear a block while frozen.`,`Không dùng chốt để dọn khối khi còn đóng băng.`),
+      t(`A number on top shows how many blocks must clear before it unfreezes.`,`Con số trên chốt cho biết cần dọn bao nhiêu khối nữa thì tan băng.`),
+      t(`The number counts down each time the player clears another block.`,`Con số giảm mỗi lần người chơi dọn được một khối khác.`),
+      t(`At 0 the ice melts. The stud is a normal stud from then on.`,`Về 0 thì băng tan. Từ lúc đó chốt là chốt thường.`),
+      fsLine(`the countdown cannot reach 0 because too few other blocks are left.`,`con số không thể về 0 vì còn quá ít khối khác.`)
+    ]),t(`Unlocks at level ${tbd}`,`Mở ở màn ${tbd}`),demo('frozenStud'))+
     ent(nm('Fail-safe','Cơ chế chống kẹt'),ul([
-      t(`${P.el2} and ${P.el3} count down on bottles sent. ${P.el1} hides colors until the last moment. These can leave a level unsolvable.`,`${P.el2} và ${P.el3} đếm ngược theo số chai được gửi. ${P.el1} giấu màu tới phút cuối. Các yếu tố này có thể làm màn chơi không giải được.`),
+      t(`${P.el2}, ${P.el6} and ${P.el7} count down on cleared blocks. ${P.el5} needs the spoon block to clear first. These can leave a level unsolvable.`,`${P.el2}, ${P.el6} và ${P.el7} đếm ngược theo số khối được dọn. ${P.el5} cần dọn khối chứa thìa trước. Các yếu tố này có thể làm màn chơi không giải được.`),
       t(`The game treats these cases as a stuck:`,`Trò chơi coi các trường hợp sau là bị kẹt:`)+ol([
-        t(`The counter on a ${P.el2} is higher than the number of bottles that can still be sent.`,`Bộ đếm trên ${P.el2} lớn hơn số chai còn có thể gửi.`),
-        t(`The tray is full, and the jam that matches the tray bottles sits only in the closed tube of a ${P.el3}.`,`Khay đã đầy, và jam khớp với các chai trong khay chỉ nằm trong ống đang đóng của ${P.el3}.`)
+        t(`The number on a ${P.el2}, ${P.el6} or ${P.el7} is higher than the number of blocks that can still clear.`,`Con số trên ${P.el2}, ${P.el6} hoặc ${P.el7} lớn hơn số khối còn có thể dọn.`),
+        t(`The only block that can still move is held by a locked hole whose spoon cannot be reached.`,`Khối duy nhất còn đi được lại bị lỗ khóa giữ, mà thìa tương ứng không thể dọn tới.`)
       ]),
       t(`What the game removes or unlocks in a stuck: ${tbd}. Level design must avoid these cases.`,`Khi bị kẹt thì gỡ hoặc mở khóa gì: ${tbd}. Thiết kế màn cần tránh các trường hợp này.`)
     ])).replace('<div class="ent">','<div class="ent" id="lock-fail-safe">');
 
   B['booster-mechanics']=
     ent(N.bo1,ul([
-      t(`Adds 1 slot to the waiting tray at once, for the rest of the level.`,`Thêm ngay 1 ô vào khay chờ, cho tới hết màn.`),
-      t(`The maximum is 5 slots. At 5 the booster button is greyed out.`,`Tối đa 5 ô. Khi đủ 5 ô, nút công cụ bị làm mờ.`),
-      t(`The tray starts with 1 slot, so up to 4 uses per level.`,`Khay bắt đầu với 1 ô, nên dùng được tối đa 4 lần mỗi màn.`),
-      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
-    ]),unlB,demo('extraTray'))+
+      t(`The player taps any block. It turns into a 1-cell block.`,`Người chơi chạm vào một khối bất kỳ. Khối biến thành khối 1 ô.`),
+      t(`The new block sits where the hole was before shrinking.`,`Khối mới nằm đúng ô có lỗ trước khi thu nhỏ.`),
+      withEl+':'+ul([
+        t(`${P.el1}: becomes a normal block.`,`${P.el1}: trở thành khối thường.`),
+        t(`${P.el2}: ${tbd}.`,`${P.el2}: ${tbd}.`),
+        t(`${P.el6}: cannot be picked.`,`${P.el6}: không chọn được.`),
+        t(`X-shaped hole: keeps its X shape.`,`Lỗ chữ X: giữ nguyên hình chữ X.`),
+        t(`${P.el4}: the shrunk block leaves its link.`,`${P.el4}: khối được thu nhỏ rời khỏi liên kết.`),
+        t(`${P.el5}: a spoon on the block activates at once. A locked hole on the block stays locked.`,`${P.el5}: thìa trên khối kích hoạt ngay. Lỗ khóa trên khối vẫn giữ nguyên.`)
+      ])
+    ]),unlockB(3),demo('shrink'))+
     ent(N.bo2,ul([
-      t(`Mixes the order of the jam sets in every tube.`,`Xáo trộn thứ tự các bộ jam trong mọi ống.`),
-      t(`Always ends with: the bottom set (the bottom 4 portions) of each open tube has the color of a bottle the player can send now, that is a free bottle on the board or a bottle in the tray.`,`Luôn đảm bảo: bộ ở đáy (4 phần jam dưới cùng) của mỗi ống đang mở cùng màu với một chai gửi lên được ngay, tức là chai tự do trên bàn chơi hoặc chai trong khay chờ.`),
-      t(`Fewer of those colors than open tubes: as many open tubes as possible get a match, at least 1.`,`Số màu như vậy ít hơn số ống đang mở: càng nhiều ống khớp càng tốt, ít nhất 1 ống.`),
-      t(`Each set keeps its 4 portions of one color, so a bottle always fills from one set.`,`Mỗi bộ giữ nguyên 4 phần cùng màu, nên chai luôn được rót từ một bộ.`),
-      t(`After the shuffle, tray bottles that now match go up on their own.`,`Sau khi xáo, chai trong khay nay đã khớp sẽ tự đi lên.`),
-      withEl+':'+ul([
-        t(`${P.el1}: stays hidden and moves with its set. If it lands at the bottom, its color shows.`,`${P.el1}: vẫn ẩn và đi cùng bộ của nó. Nếu bị xáo xuống đáy thì hiện màu.`),
-        t(`${P.el2}: a locked bottle does not count as a bottle that can be sent.`,`${P.el2}: chai đang khóa không tính là chai gửi lên được.`),
-        t(`${P.el3}: jam in the closed tube is mixed too, but the match rule only covers open tubes. The lid and counter do not change.`,`${P.el3}: jam trong ống đang đóng cũng được xáo, nhưng quy tắc khớp màu chỉ áp dụng cho ống đang mở. Nắp và bộ đếm giữ nguyên.`)
-      ])
-    ]),unlB,demo('shuffle'))+
+      t(`Adds 30 s to the timer at once.`,`Cộng ngay 30 giây vào đồng hồ.`),
+      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
+    ]),unlockB(5),demo('extraTime'))+
     ent(N.bo3,ul([
-      t(`Removes 3 bottles from the board at once, picked at random in this order:`,`Xóa ngay 3 chai trên bàn chơi, chọn ngẫu nhiên theo thứ tự ưu tiên:`)+ol([
-        t(`Bottles on top of the pile (free, the ones the player can tap now).`,`Chai trên cùng của đống (chai tự do, người chơi chạm được ngay).`),
-        t(`Bottles in the lower layers.`,`Chai ở các lớp bên dưới.`),
-        t(`Locked bottles, last.`,`Chai bị khóa, sau cùng.`)
-      ]),
-      t(`Within a group, the pick is random.`,`Trong cùng một nhóm, chọn ngẫu nhiên.`),
-      t(`For each removed bottle, one set of its color also leaves the tubes, so the level can still be finished: the set of that color farthest from a nozzle.`,`Với mỗi chai bị xóa, một bộ jam cùng màu cũng bị gỡ khỏi ống, để màn vẫn hoàn thành được: chọn bộ cùng màu nằm xa vòi nhất.`),
-      t(`Fewer than 3 bottles on the board: removes all of them.`,`Trên bàn còn ít hơn 3 chai: xóa hết.`),
-      t(`Bottles in the tray or in a fill spot are not touched.`,`Chai trong khay chờ hoặc ở ô rót không bị ảnh hưởng.`),
-      t(`Removed bottles do not count as sent for any counter.`,`Chai bị xóa không tính là chai được gửi cho bộ đếm nào.`),
+      t(`The player taps any block. It is removed from the board at once.`,`Người chơi chạm vào một khối bất kỳ. Khối bị xóa khỏi bàn ngay.`),
       withEl+':'+ul([
-        t(`${P.el2}: removed only when no other bottle is left. Its lock and counter go with it.`,`${P.el2}: chỉ bị xóa khi không còn chai nào khác. Ổ khóa và bộ đếm mất theo.`),
-        t(`${P.el1}: if the set to remove is hidden, it leaves without showing its color.`,`${P.el1}: nếu bộ cần gỡ đang ẩn, bộ bị gỡ mà không hiện màu.`),
-        t(`${P.el3}: the set can be taken from the closed tube too.`,`${P.el3}: có thể gỡ bộ jam ở cả ống đang đóng.`)
+        t(`Can be picked: ${P.el1}, ${P.el6}, block with an X-shaped hole, one block of a ${P.el4} group, block holding a spoon.`,`Chọn được: ${P.el1}, ${P.el6}, khối có lỗ chữ X, một khối trong nhóm ${P.el4}, khối chứa thìa.`),
+        t(`${P.el2}: ${tbd}.`,`${P.el2}: ${tbd}.`),
+        t(`${P.el4}: only the tapped block goes. Its link breaks at once.`,`${P.el4}: chỉ xóa khối được chạm. Liên kết của nó gỡ ngay.`),
+        t(`${P.el5}: a spoon on the removed block activates at once.`,`${P.el5}: thìa trên khối bị xóa kích hoạt ngay.`)
       ])
-    ]),unlB,demo('remove'));
+    ]),unlockB(10),demo('remove'));
 
   /* ===== 2. FTUE & tutorial ===== */
   B['ftue--tutorial']=`<p class="sec-intro">${t(
@@ -1155,112 +1209,116 @@ function view(l){
        `Các bước đã lưu được bỏ qua khi người chơi thoát rồi vào lại.`)]
   ]);
 
-  /* first and last rows are the same in every project; the middle rows teach this game's core loop */
+  /* first and last rows follow the game's own FTUE table */
   B['ftue-steps']=table(t('FTUE steps','Các bước FTUE'),
     [t('Step','Bước'),t('Complete condition','Điều kiện hoàn thành'),t('Highlight','Phần được làm nổi bật'),t('Text box','Nội dung hộp thoại'),t('Progress save','Lưu tiến độ')],
     [
       [t('Load the level','Tải màn chơi'),t('The game loads into level 1.','Trò chơi vào màn 1.'),dash,dash,dash],
       [t('Terms &amp; Conditions / Privacy Policy','Điều khoản / Chính sách quyền riêng tư'),
-       t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư.'),dash,dash,dash],
-      [t('Send the red bottle','Gửi chai đỏ'),t('The player taps the red bottle. It goes under the red tube and fills.','Người chơi chạm vào chai đỏ. Chai vào dưới ống jam đỏ và được rót đầy.'),
-       t('The red bottle, with a tapping hand.','Chai đỏ, kèm bàn tay chỉ chạm.'),popup('Tap a bottle<br>to fill it with jam!','Chạm vào chai<br>để rót jam!'),dash],
-      [t('Send the blue bottle','Gửi chai xanh dương'),t('The player taps the blue bottle. No tube has blue at the bottom, so it waits in the tray.','Người chơi chạm vào chai xanh dương. Chưa ống nào có jam xanh ở đáy, nên chai vào khay chờ.'),
-       t('The blue bottle, then the waiting tray.','Chai xanh dương, rồi tới khay chờ.'),popup('No matching jam?<br>It waits here.','Chưa có jam cùng màu?<br>Chai chờ ở đây.'),dash],
-      [t('Fill the rest','Rót các chai còn lại'),t('The player sends the other bottles. The blue bottle goes up on its own when blue jam reaches the bottom.','Người chơi gửi các chai còn lại. Chai xanh dương tự đi lên khi jam xanh xuống tới đáy.'),dash,dash,dash],
-      [t('Level complete','Hoàn thành màn'),t('Every bottle is filled. Level 1 is complete.','Mọi chai đã được rót đầy. Hoàn thành màn 1.'),dash,dash,t('Yes','Có')]
+       t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư.'),dash,dash,t('Yes','Có')],
+      [t('Move the red block','Kéo khối đỏ'),t('The player moves the red block onto the red stud.','Người chơi kéo khối đỏ vào chốt đỏ.'),
+       t('A hand drags the red block toward the red stud.','Bàn tay kéo khối đỏ về phía chốt đỏ.'),dash,dash],
+      [t('Move the blue block','Kéo khối xanh dương'),t('The player moves the blue block onto the blue stud.','Người chơi kéo khối xanh dương vào chốt xanh dương.'),
+       t('A hand drags the blue block toward the blue stud.','Bàn tay kéo khối xanh dương về phía chốt xanh dương.'),dash,dash],
+      [t('Level complete','Hoàn thành màn'),t('Every block is cleared. Level 1 is complete.','Mọi khối đã được dọn. Hoàn thành màn 1.'),dash,dash,dash]
     ],'wide steps-tbl');
 
   /* one row per element, in unlock order */
   B['element-tutorial']=table(t('Element tutorial','Hướng dẫn yếu tố đặc biệt'),
     [t('Element','Yếu tố'),t('Popup text','Nội dung popup'),t('Unlocks at level','Mở ở màn')],
     [
-      [N.el1,popup('Hidden jam shows its color<br>at the bottom of the tube.','Jam ẩn hiện màu<br>khi xuống đáy ống.'),tbd],
-      [N.el2,popup('Free the bottle, then send<br>more bottles to unlock it.','Giải phóng chai, rồi gửi<br>thêm chai để mở khóa.'),tbd],
-      [N.el3,popup('Send bottles to switch<br>which tube is open.','Gửi chai lên để đổi<br>ống đang mở.'),tbd]
+      [N.el1,popup('Can only move along<br>a single axis.','Chỉ di chuyển theo<br>một trục.'),lvl(7)],
+      [N.el2,popup('Clear blocks<br>to reveal its color.','Dọn các khối khác<br>để khối hiện màu.'),lvl(12)],
+      [N.el3,popup('Requires a matching<br>hole shape to fit.','Cần lỗ cùng hình dạng<br>mới khớp được.'),lvl(17)],
+      [N.el4,popup('Sticks different block<br>colors together.','Dính các khối<br>khác màu với nhau.'),lvl(22)],
+      [N.el5,popup('Clear the matching spoon<br>to release the lock.','Dọn khối có thìa cùng màu<br>để mở khóa.'),lvl(27)],
+      [N.el6,popup('Clear blocks<br>to break the ice.','Dọn các khối khác<br>để phá băng.'),lvl(32)],
+      [N.el7,popup('Clear blocks<br>to release the stud.','Dọn các khối khác<br>để giải phóng chốt.'),tbd]
     ]);
 
   /* one row per booster */
   B['booster-tutorial']=table(t('Booster tutorial','Hướng dẫn công cụ hỗ trợ'),
     [t('Booster','Công cụ'),t('Popup text','Nội dung popup'),t('Unlocks at level','Mở ở màn'),t('Free boosters','Số lượt tặng')],
     [
-      [N.bo1,popup('Add 1 more tray slot!','Thêm 1 ô khay chờ!'),tbd,lvl(3)],
-      [N.bo2,popup('Mix up the jam!','Xáo trộn jam!'),tbd,lvl(3)],
-      [N.bo3,popup('Remove 3 bottles!','Xóa 3 chai!'),tbd,lvl(3)]
+      [N.bo1,popup('Shrink down any block!','Thu nhỏ khối bất kỳ!'),lvl(3),lvl(3)],
+      [N.bo2,popup('Add 30s to the timer!','Cộng 30 giây vào đồng hồ!'),lvl(5),lvl(3)],
+      [N.bo3,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(10),lvl(3)]
     ]);
 
-  /* every element and booster with its unlock level. Levels are TBD, so the order below is a suggestion. */
+  /* every element and booster with its unlock level, sorted by level */
   const stops=[
     [1,t('First tutorial','Hướng dẫn đầu tiên'),'ftue','ftue-steps','FTUE'],
-    ['TBD',P.bo1,'boost','booster-mechanics'],['TBD',P.el1,'elem','elements-mechanics'],
-    ['TBD',P.bo2,'boost','booster-mechanics'],['TBD',P.el2,'elem','elements-mechanics'],
-    ['TBD',P.bo3,'boost','booster-mechanics'],['TBD',P.el3,'elem','elements-mechanics']
+    [3,P.bo1,'boost','booster-mechanics'],[5,P.bo2,'boost','booster-mechanics'],
+    [7,P.el1,'elem','elements-mechanics'],[10,P.bo3,'boost','booster-mechanics'],
+    [12,P.el2,'elem','elements-mechanics'],[17,P.el3,'elem','elements-mechanics'],
+    [22,P.el4,'elem','elements-mechanics'],[27,P.el5,'elem','elements-mechanics'],
+    [32,P.el6,'elem','elements-mechanics'],['TBD',P.el7,'elem','elements-mechanics']
   ];
   B['ftue--tutorial:after']=`<div class="glance">
     <h4>${t('Unlock order at a glance','Thứ tự mở khóa theo màn')}</h4>
-    <p>${t('Sections 2.2 to 2.4 on one line. Unlock levels are not set yet, so this order is a suggestion.','Gom các mục 2.2 đến 2.4 trên một dòng. Màn mở khóa chưa chốt, nên thứ tự này chỉ là đề xuất.')}</p>
+    <p>${t('Sections 2.2 to 2.4 on one line, in level order.','Gom các mục 2.2 đến 2.4 trên một dòng, theo thứ tự màn chơi.')}</p>
     <ol class="timeline">${stops.map(s=>`<li class="${s[2]}"><span class="lv">${t('Level','Màn')} ${s[0]}</span><span class="nm"><a href="#${s[3]}">${s[1]}</a></span><span class="kd">${s[4]||(s[2]==='boost'?t('Booster','Công cụ hỗ trợ'):t('Element','Yếu tố đặc biệt'))}</span></li>`).join('')}</ol>
   </div>`;
 
   /* ===== 3. Object set & animation ===== */
   B['game-concept']=`<p>${t(
-    `A dark filling machine at the top with tall syringe-like tubes, pipes and valves; colored liquid in layers pours from the nozzles. Below, a pile of colored soda cans sits on a soft blue tray. Candy colors, soft light, a satisfying pour and a pop when the can is sealed. No real drink brands on the cans. Concept art link: ${tbd}.`,
-    `Phía trên là máy rót màu tối với các ống cao giống ống tiêm, đường ống và van; chất lỏng màu xếp lớp chảy ra từ vòi. Bên dưới là đống lon nước ngọt nhiều màu trên khay xanh dịu. Màu kẹo tươi, ánh sáng dịu, cảm giác rót đã tay và tiếng “bốp” khi đóng lon. Không dùng thương hiệu nước uống thật trên lon. Link concept art: ${tbd}.`)}</p>`;
+    `Soft, glossy jelly blocks on a deep purple board with chunky rounded walls. Bright candy colors, white outlines on studs, a gold timer and coin HUD. Reference: the level 23 screenshot (sketch at the top). Concept art link: ${tbd}.`,
+    `Các khối thạch mềm, bóng trên bàn chơi màu tím đậm, tường bo tròn dày. Màu kẹo tươi, chốt có viền trắng, HUD đồng hồ và xu màu vàng. Tham khảo: screenshot màn 23 (hình đầu trang). Link concept art: ${tbd}.`)}</p>`;
 
   const colors=[t('Red','Đỏ'),t('Blue','Xanh dương'),t('Green','Xanh lá'),t('Yellow','Vàng'),t('Pink','Hồng'),t('Orange','Cam'),t('Purple','Tím'),t('Cyan','Xanh ngọc')];
   const anim=n=>t('Animation '+n,'Chuyển động '+n);
   B['core-game-object-concept']=
     ent(t('Color list','Bảng màu'),
-      `<p>${t(`Jam, bottle caps and bottle outlines share these 8 colors. Colors used per level: ${tbd}.`,`Jam, nắp chai và viền chai dùng chung 8 màu này. Số màu dùng mỗi màn: ${tbd}.`)}</p>
+      `<p>${t(`Blocks, studs, spoons and locked holes share these 8 colors. The screenshot shows red, blue, green, yellow, orange and purple; the last 2 colors are ${tbd}.`,
+             `Khối, chốt, thìa và lỗ khóa dùng chung 8 màu này. Screenshot có đỏ, xanh dương, xanh lá, vàng, cam và tím; 2 màu còn lại ${tbd}.`)}</p>
        <ol class="colors">${colors.map((c,i)=>`<li>${cap(i+1,i+1)}<span><span class="sr">${i+1}: </span>${c}</span></li>`).join('')}</ol>`)+
-    ent(nm('Jam tube','Ống jam'),params([
-      [t('Look','Hình ảnh'),t('Clear syringe-like tube on the machine, a nozzle at the bottom, liquid in color layers with a thin line between sets.','Ống trong suốt giống ống tiêm gắn trên máy, vòi ở đáy, chất lỏng xếp thành lớp màu, có vạch mảnh giữa các bộ.')],
-      [anim(1),t('Pour: a jam stream runs from the nozzle into the bottle, one portion at a time.','Rót: dòng jam chảy từ vòi xuống chai, từng phần một.')],
-      [anim(2),t('Set poured: the column slides down with a small wobble.','Rót xong một bộ: cột jam trượt xuống, hơi rung rinh.')]
+    ent(nm('Block','Khối'),params([
+      [t('Look','Hình ảnh'),t('Glossy jelly with rounded corners and a dark round hole in one corner cell.','Thạch bóng, góc bo tròn, có một lỗ tròn tối ở một ô góc.')],
+      [anim(1),t('Picked: the block lifts slightly and wobbles.','Khi chọn: khối nhấc nhẹ lên và rung rinh.')],
+      [anim(2),t('Moved: slides cell by cell; a small squash when it hits a wall or block.','Khi kéo: trượt theo từng ô; hơi bẹp lại khi chạm tường hoặc khối khác.')],
+      [anim(3),t('Cleared: snaps onto the stud, squishes and pops.','Khi dọn: khớp vào chốt, bẹp xuống rồi biến mất.')]
     ]))+
-    ent(nm('Bottle','Chai'),params([
-      [t('Look','Hình ảnh'),t('Colored soda can (bottle in the sketches). Lower layers of the pile are slightly shaded.','Lon nước ngọt có màu (vẽ thành chai trong hình minh họa). Các lớp dưới của đống hơi tối hơn.')],
-      [anim(1),t('Sent: hops in an arc to the fill spot or the tray.','Khi gửi: nhảy theo đường cong tới ô rót hoặc khay chờ.')],
-      [anim(2),t('Filling: the jam level rises in 4 steps.','Khi rót: mức jam dâng lên theo 4 nấc.')],
-      [anim(3),t('Full: the cap twists shut, the bottle bounces and flies off with sparkles.','Khi đầy: nắp xoay đóng, chai nảy lên rồi bay đi kèm lấp lánh.')],
-      [anim(4),t('Cannot go (tray full or locked): a short shake.','Không đi được (khay đầy hoặc đang khóa): rung nhẹ.')]
-    ]))+
-    ent(nm('Waiting tray','Khay chờ'),params([
-      [t('Look','Hình ảnh'),t('A small slot above the pile. Slots added by the booster pop in beside it.','Một ô nhỏ phía trên đống lon. Ô thêm từ công cụ bật ra bên cạnh.')],
-      [anim(1),t('Full tray: the slots flash red once.','Khay đầy: các ô nháy đỏ một lần.')]
+    ent(nm('Stud','Chốt'),params([
+      [t('Look','Hình ảnh'),t('Round colored peg with a white rim.','Chốt tròn có màu, viền trắng.')],
+      [anim(1),t('Last block of its color cleared: every stud of that color pops at once.','Khối cuối cùng của màu được dọn: mọi chốt màu đó cùng biến mất.')]
     ]));
 
   const an=t('Animation','Chuyển động'),look=t('Look','Hình ảnh');
   B['element-object-concept']=
-    ent(N.el1,params([[look,t('Grey jam portions with a white “?” across the set.','Các phần jam màu xám, dấu “?” trắng giữa bộ.')],[an,t('At the bottom, the grey melts away and the real color shows.','Xuống tới đáy, lớp xám tan đi và màu thật hiện ra.')]]))+
-    ent(N.el2,params([[look,t('Dark cover and a padlock over the bottle. Once nothing rests on it, a counter badge shows on it.','Lớp phủ tối và ổ khóa trên chai. Khi không còn chai nào đè lên, huy hiệu bộ đếm hiện trên chai.')],[an,t('The number ticks down. At 0 the padlock springs open and drops away.','Con số giảm dần. Về 0 thì ổ khóa bật mở và rơi xuống.')]]))+
-    ent(N.el3,params([[look,t('A metal lid with a padlock under the closed tube’s nozzle. A counter badge sits beside the pair.','Nắp kim loại có ổ khóa dưới vòi ống đang đóng. Huy hiệu bộ đếm nằm cạnh cặp ống.')],[an,t('At 0 one lid slides shut and the other slides open.','Về 0 thì một nắp trượt đóng và nắp kia trượt mở.')]]));
+    ent(N.el1,params([[look,t('White two-way arrow on top of the block, along its axis.','Mũi tên hai chiều màu trắng trên khối, theo trục di chuyển.')],[an,t('Dragged across its axis: a small shake.','Kéo khác trục: khối rung nhẹ.')]]))+
+    ent(N.el2,params([[look,t('Grey cover over the block, the countdown number in the middle, the hole still visible.','Lớp xám che khối, con số đếm ngược ở giữa, vẫn thấy lỗ.')],[an,t('The number ticks down; at 0 the cover fades and the color shows.','Con số giảm dần; về 0 thì lớp che mờ đi và khối hiện màu.')]]))+
+    ent(N.el3,params([[look,t('X-shaped colored stud. The matching block has an X-shaped hole.','Chốt màu hình chữ X. Khối tương ứng có lỗ hình chữ X.')],[an,t('Same as a normal stud.','Giống chốt thường.')]]))+
+    ent(N.el4,params([[look,t('A band joins the touching edges of the linked blocks.','Một dải nối ở cạnh tiếp giáp giữa các khối liên kết.')],[an,t('The band snaps when a block it joins clears.','Dải nối đứt khi một khối nó nối được dọn.')]]))+
+    ent(N.el5,params([[look,t('Colored spoon icon on the block. Locked hole: colored ring with a padlock.','Biểu tượng thìa có màu trên khối. Lỗ khóa: vòng màu có ổ khóa.')],[an,t('The spoon flies to the matching locked hole; the padlock opens and fades.','Thìa bay tới lỗ khóa cùng màu; ổ khóa mở và mờ dần.')]]))+
+    ent(N.el6,params([[look,t('Ice layer over the block, color visible, countdown number on top.','Lớp băng phủ trên khối, vẫn thấy màu, con số đếm ngược ở trên.')],[an,t('At 0 the ice cracks and shatters.','Về 0 thì băng nứt và vỡ vụn.')]]))+
+    ent(N.el7,params([[look,t('Ice cap over the stud, color visible, countdown number on top.','Lớp băng phủ trên chốt, vẫn thấy màu, con số đếm ngược ở trên.')],[an,t('At 0 the ice melts away.','Về 0 thì băng tan.')]]));
 
   B['booster-object-concept']=
-    ent(N.bo1,params([[an,t('A new slot pops in beside the tray with a sparkle.','Một ô mới bật ra cạnh khay kèm lấp lánh.')]]))+
-    ent(N.bo2,params([[an,t('The tubes shake, the jam swirls, and the new order settles.','Các ống rung lên, jam xoáy tròn, rồi thứ tự mới ổn định.')]]))+
-    ent(N.bo3,params([[an,t('3 bottles burst into puffs one after another. Their jam sets fade out of the tubes.','3 chai lần lượt vỡ thành làn khói. Các bộ jam tương ứng mờ dần khỏi ống.')]]));
+    ent(N.bo1,params([[an,t('The block squeezes into its hole cell and pops back as a 1-cell block.','Khối co lại về ô có lỗ rồi bật ra thành khối 1 ô.')]]))+
+    ent(N.bo2,params([[an,t('“+30s” flies from the booster button to the timer; the timer pulses.','Chữ “+30s” bay từ nút công cụ lên đồng hồ; đồng hồ nảy nhẹ.')]]))+
+    ent(N.bo3,params([[an,t('The tapped block bursts into a puff and disappears.','Khối được chạm vỡ thành làn khói và biến mất.')]]));
 
   /* ===== 4. SFX & haptics ===== */
-  /* FIXED: the UI rows are the same in every project. PER GAME: replace the core, element and booster rows.
-     Haptic: 0 none, 1 weak, 2 medium, 3 strong */
+  /* FIXED: the UI rows are the same in every project. Haptic: 0 none, 1 weak, 2 medium, 3 strong, null TBD */
   const cat={ui:t('UI','Giao diện (UI)'),core:t('Core game SFX','Lối chơi chính'),el:t('Element SFX','Yếu tố đặc biệt'),bo:t('Booster SFX','Công cụ hỗ trợ')};
   const sfx=[
     ['BGM In Game','ui',t('Gameplay starts','Bắt đầu vào chơi'),0],
-    ['BGM Home','ui',t('The home scene is open','Đang ở màn hình chính'),0],
+    ['BGM Loading','ui',t('The loading scene is open','Đang ở màn hình tải'),0],
     ['Win Level','ui',t('The player wins the level','Người chơi thắng màn'),3],
     ['Lose Level','ui',t('The player is temporarily stuck','Người chơi tạm thời bị kẹt'),3],
-    ['Tap','ui',t('The player taps the screen','Người chơi chạm vào màn hình'),1],
+    ['Tap','ui',t('The player taps on UI','Người chơi chạm vào giao diện'),1],
     ['Coin Reward','ui',t('The player earns coins','Người chơi nhận xu'),0],
-    ['Booster Reward','ui',t('The player earns a booster','Người chơi nhận công cụ hỗ trợ'),0],
-    ['Bottle Send','core',t('The player taps a bottle and it goes up','Người chơi chạm vào chai và chai đi lên'),null],
-    ['Jam Pour','core',t('Jam pours into a bottle, per portion','Jam rót vào chai, theo từng phần'),null],
-    ['Bottle Full','core',t('A full bottle is capped and leaves','Chai đầy được đóng nắp và rời đi'),null],
-    ['Tray Full','core',t('The tray is full and a bottle cannot go','Khay đầy và chai không đi được'),null],
-    ['Hidden Reveal','el',t(`A ${P.el1} set reaches the bottom and shows its color`,`Bộ ${P.el1} xuống tới đáy và hiện màu`),null],
-    ['Lock Open','el',t(`A ${P.el2} counter hits 0 and the padlock opens`,`Bộ đếm ${P.el2} về 0 và ổ khóa mở`),null],
-    ['Tube Switch','el',t(`The tubes of a ${P.el3} swap`,`Hai ống của ${P.el3} đổi trạng thái`),null],
-    ['Extra Tray','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
-    ['Shuffle','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
+    ['Booster Reward','ui',t('The player earns a booster from a purchase','Người chơi nhận công cụ hỗ trợ từ giao dịch'),0],
+    ['Purchase Complete','ui',t('An IAP purchase completes','Giao dịch IAP hoàn tất'),0],
+    ['Block Pick','core',t('The player picks a block','Người chơi chọn một khối'),null],
+    ['Block Clear','core',t('A block snaps onto its stud and clears','Khối khớp vào chốt và biến mất'),null],
+    ['Stud Clear','core',t('Every stud of a color clears','Mọi chốt của một màu biến mất'),null],
+    ['Hidden Reveal','el',t(`A ${P.el2} reaches 0 and shows its color`,`${P.el2} về 0 và hiện màu`),null],
+    ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),null],
+    ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
+    ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),null],
+    ['Shrink','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
+    ['Extra Time','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
     ['Remove','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
   ];
   B['sfx--haptics']=table(t('SFX and haptics','Âm thanh và rung'),
@@ -1283,8 +1341,11 @@ function view(l){
       `Values the team can change without releasing a new build.`,
       `Các thông số mà đội có thể chỉnh mà không cần phát hành bản game mới.`)}</p>`+
     rc(t('Level reward','Thưởng qua màn'),[
-      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin],
-      ['level_win_ad_multiplier',t('Reward multiplier when the player watches the reward ad','Hệ số nhân thưởng khi người chơi xem quảng cáo thưởng'),'2.0×','×']
+      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin]
+    ])+
+    rc(t('Timer','Đồng hồ'),[
+      ['revive_extra_time_seconds',t('Time added to the timer on each revive','Thời gian cộng vào đồng hồ mỗi lần hồi sinh'),'90',t('sec','giây')],
+      ['booster_extra_time_seconds',t(`Time added by the ${P.bo2} booster`,`Thời gian công cụ ${P.bo2} cộng thêm`),'30',t('sec','giây')]
     ])+
     rc(t('Revive','Hồi sinh'),[
       ['revive_base_cost',t('Coin cost of the 1st revive in an attempt','Số xu cho lần hồi sinh đầu tiên trong một lượt chơi'),'900',coin],
@@ -1311,12 +1372,7 @@ function view(l){
     ])+
     rc(t('Unlock popups — offer unlock level','Popup mở khóa — màn mở ưu đãi'),[
       ['starter_pack_unlock_level',t('Starter Pack (IAP) — level from which the offer popup can show','Gói Khởi đầu (IAP) — màn bắt đầu có thể hiện popup ưu đãi'),'12',t('level','màn')],
-      ['remove_ads_unlock_level',t('Remove Ads (IAP) — level from which the offer popup can show','Gỡ quảng cáo (IAP) — màn bắt đầu có thể hiện popup ưu đãi'),'15',t('level','màn')],
-      ['garage_gift_unlock_level',t('Limited Time Reward / Garage Gift (rewarded ad) — level from which the gift popup can show','Quà giới hạn thời gian / Garage Gift (quảng cáo thưởng) — màn bắt đầu có thể hiện popup quà'),'10',t('level','màn')]
-    ])+
-    rc(t('Live ops','Live Ops'),[
-      ['skip_level_max_per_day',t('Skip Level — max skips per day (ad or coins). The count resets each new day.','Bỏ qua màn — số lần bỏ qua tối đa mỗi ngày (bằng quảng cáo hoặc xu). Số lần được tính lại mỗi ngày mới.'),'3',t('count','lần')],
-      ['retry_booster_max_per_day',t('Retry with Booster — max uses per day (rewarded ad). The count resets each new day.','Chơi lại kèm công cụ — số lần dùng tối đa mỗi ngày (quảng cáo có thưởng). Số lần được tính lại mỗi ngày mới.'),'3',t('count','lần')]
+      ['remove_ads_unlock_level',t('Remove Ads (IAP) — level from which the offer popup can show','Gỡ quảng cáo (IAP) — màn bắt đầu có thể hiện popup ưu đãi'),'15',t('level','màn')]
     ]);
 
   /* ===== 6. IAP & offers ===== */
@@ -1367,22 +1423,10 @@ function view(l){
       t(`Every 4 interstitials (2nd–4th), every 8 (5th +)`,`Mỗi 4 quảng cáo xen kẽ (lần 2–4), mỗi 8 (từ lần 5)`),
       t(`2nd–4th: 20 min cooldown or new session. 5th +: 2 a day. Priority 2. Stops once bought.`,`Lần 2–4: chờ 20 phút hoặc phiên mới. Từ lần 5: 2 lần/ngày. Ưu tiên 2. Dừng khi đã mua.`),see('remove-ads','6.4')],
     [t('Rewarded-ad and coin popups','Popup quảng cáo có thưởng và xu')],
-    [nm('Limited Time Reward','Quà giới hạn thời gian'),t('Rewarded ad','Quảng cáo có thưởng'),lvl(10),
-      t(`1st: Level Complete of level 10`,`Lần đầu: Level Complete màn 10`),
-      t(`1st Level Complete or new game session after the 4 h cooldown`,`Level Complete hoặc phiên chơi mới đầu tiên sau cooldown 4 giờ`),
-      t(`Once per cycle. 10 min to claim. Priority 3.`,`1 lần mỗi chu kỳ. 10 phút để nhận. Ưu tiên 3.`),see('limited-time-reward','7.3')],
-    [nm('Skip Level','Bỏ qua màn'),t('Rewarded ad or coins','Quảng cáo có thưởng hoặc xu'),t('Always','Luôn có'),
-      t(`Lose screen, 3 fails in a row on the same level`,`Màn hình thua, thua 3 lần liên tiếp cùng một màn`),
-      t(`Each time the condition is met`,`Mỗi lần thỏa điều kiện`),
-      t(`3 a day`,`3 lần/ngày`),see('skip-retry','7.4')],
-    [nm('Retry with Booster','Chơi lại kèm công cụ'),t('Rewarded ad','Quảng cáo có thưởng'),t(`${P.bo3} unlock`,`Mở ${P.bo3}`),
-      t(`Restarting a level with 0 ${P.bo3}`,`Chơi lại một màn khi có 0 ${P.bo3}`),
-      t(`Each time the condition is met`,`Mỗi lần thỏa điều kiện`),
-      t(`3 a day`,`3 lần/ngày`),see('skip-retry','7.4')],
     [nm('Revive','Hồi sinh'),t('Coins or rewarded ad','Xu hoặc quảng cáo có thưởng'),t('Always','Luôn có'),
-      t(`The moment the player loses`,`Ngay khi người chơi thua`),
-      t(`Each loss in the same attempt`,`Mỗi lần thua trong cùng lượt chơi`),
-      t(`1 ad revive per attempt`,`1 lần bằng quảng cáo mỗi lượt`),see('additional-mechanics','1.3')],
+      t(`The moment the timer hits 0`,`Ngay khi đồng hồ về 0`),
+      t(`Each time the timer hits 0 in the same attempt`,`Mỗi lần đồng hồ về 0 trong cùng lượt chơi`),
+      t(`1 ad revive per attempt. +1 min 30 s each`,`1 lần bằng quảng cáo mỗi lượt. Mỗi lần +1 phút 30 giây`),see('additional-mechanics','1.3')],
     [nm('Refill lives','Nạp tim'),t('Coins (900 → 5 lives) or rewarded ad (1 life)','Xu (900 → 5 tim) hoặc quảng cáo có thưởng (1 tim)'),t('Always','Luôn có'),
       t(`Starting a level with 0 lives`,`Bắt đầu màn khi còn 0 tim`),
       t(`Each time the condition is met`,`Mỗi lần thỏa điều kiện`),
@@ -1396,16 +1440,14 @@ function view(l){
       :`<tr><th scope="row">${r[0]}</th>${r.slice(1).map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
   B['popup-priority']=
-    `<p class="sec-intro">${t(`Priority between the 3 offer popups: Starter Pack, Remove Ads and Limited Time Reward. When several trigger at the same time, only 1 popup is shown.`,
-      `Thứ tự ưu tiên giữa 3 popup ưu đãi: Starter Pack, Remove Ads và Limited Time Reward. Khi nhiều popup cùng kích hoạt, chỉ hiện 1 popup.`)}</p>`+
+    `<p class="sec-intro">${t(`Priority between the 2 offer popups: Starter Pack and Remove Ads. When both trigger at the same time, only 1 popup is shown.`,
+      `Thứ tự ưu tiên giữa 2 popup ưu đãi: Starter Pack và Remove Ads. Khi cả hai cùng kích hoạt, chỉ hiện 1 popup.`)}</p>`+
     table(t('Popup priority','Thứ tự ưu tiên popup'),[t('Triggered together on','Cùng kích hoạt ở'),t('Priority','Thứ tự ưu tiên'),t('Shown','Hiện')],[
-      [t('Level complete screen','Màn hình hoàn thành màn'),'Starter Pack > Remove Ads > Limited Time Reward',t('Only 1 popup','Chỉ 1 popup')],
-      [t('New game session','Phiên chơi mới'),'Starter Pack > Limited Time Reward',t('Only 1 popup','Chỉ 1 popup')]
+      [t('Level complete screen','Màn hình hoàn thành màn'),'Starter Pack > Remove Ads',t('Only 1 popup','Chỉ 1 popup')]
     ],'compact')+
     table(t('When a popup is blocked','Khi popup bị chặn'),[t('Popup','Popup'),t('When blocked','Khi bị chặn')],[
       ['Starter Pack',t('Never blocked','Không bao giờ bị chặn')],
-      ['Remove Ads',t('The interstitial ad counter stays at 0 and waits for the next interstitial ad to show the popup.','Bộ đếm quảng cáo xen kẽ giữ ở 0 và chờ quảng cáo xen kẽ tiếp theo để hiện popup.')],
-      ['Limited Time Reward',t('Shows on the next level win screen, and the 10 min timer starts then.','Hiện ở màn hình thắng của màn tiếp theo, và timer 10 phút bắt đầu từ lúc đó.')]
+      ['Remove Ads',t('The interstitial ad counter stays at 0 and waits for the next interstitial ad to show the popup.','Bộ đếm quảng cáo xen kẽ giữ ở 0 và chờ quảng cáo xen kẽ tiếp theo để hiện popup.')]
     ],'compact');
 
   B['store']=kv([
@@ -1459,80 +1501,45 @@ function view(l){
       ]));
 
   /* ===== 7. Live ops ===== */
-  /* FIXED: keep the logic. Only change the numbers if the new game differs. */
-  B['live-ops']=`<p class="sec-intro">${t(`Features that bring players back or help past hard levels, mostly for rewarded ads, plus the rules for every offer popup (7.1, 7.2).`,
-    `Tính năng kéo người chơi quay lại hoặc giúp qua màn khó, phần lớn đổi bằng quảng cáo có thưởng, cùng quy tắc cho mọi popup ưu đãi (7.1, 7.2).`)}</p>`;
-  B['limited-time-reward']=
-    sys(nm('Limited Time Reward','Quà giới hạn thời gian'),
-      lead(t(`A free gift claimed with a rewarded ad. Shows once per cycle, at the 1st Level Complete or new game session after the cooldown.`,`Quà miễn phí nhận bằng quảng cáo có thưởng. Hiện 1 lần mỗi chu kỳ, ở Level Complete hoặc phiên chơi mới đầu tiên sau khi hết cooldown.`))+
-      tiles([[`200 + 1`,t('Gold + booster (“Gold Brick Package!”)','Vàng + công cụ (“Gold Brick Package!”)')],[t('10 min','10 phút'),t('Timer, from when it shows','Timer, tính từ lúc hiện')],[t('4 h','4 giờ'),t('Cooldown after the timer','Cooldown sau khi hết timer')],[t('Level 10','Màn 10'),t('Unlocks','Mở khóa')]])+
-      panel(t('Popup appear logic','Logic hiện popup'),
-        table(t('Limited Time Reward cycle','Chu kỳ Quà giới hạn thời gian'),[t('State','Trạng thái'),t('Player sees','Người chơi thấy'),t('Next','Tiếp theo')],[
-          [t('Cooldown','Cooldown'),t('Nothing. 4 h runs, also offline.','Không có gì. Đếm 4 giờ, kể cả khi offline.'),t('Ends → Ready','Hết giờ → Chờ hiện')],
-          [t('Ready','Chờ hiện'),t('Nothing yet','Chưa có gì'),t('Next Level Complete or new game session, not blocked → Live','Level Complete hoặc phiên chơi mới tiếp theo, không bị chặn → Đang hiện')],
-          [t('Live','Đang hiện'),t('Popup, then HUD icon with the 10 min timer','Popup, sau đó biểu tượng HUD kèm timer 10 phút'),t('Claim → reward · 10 min over → offer gone','Nhận → có quà · Hết 10 phút → offer biến mất')],
-          [t('Timer over','Hết timer'),dash,t('→ Cooldown (new 4 h)','→ Cooldown (4 giờ mới)')]
-        ],'compact')+
-        ul([
-          t(`1st cycle: Level Complete of level 10.`,`Chu kỳ đầu: Level Complete màn 10.`),
-          t(`Once per cycle, so it never shows back to back.`,`1 lần mỗi chu kỳ, để không hiện liên tục.`),
-          t(`The 10 min timer only starts after the player sees the popup.`,`Timer 10 phút chỉ bắt đầu sau khi người chơi thấy popup.`),
-          t(`Cooldown ended offline: shows when the player starts a new game session.`,`Cooldown hết khi offline: hiện khi người chơi mở phiên chơi mới.`),
-          t(`Ad fails: no reward, timer keeps running.`,`Quảng cáo lỗi: không có quà, timer vẫn chạy.`)
-        ]))+
-      kv([
-        [t('Popup priority','Ưu tiên popup'),t(`Lowest. Level Complete: Starter Pack or Remove Ads can block it. New game session: only Starter Pack can block it. Blocked: shows on the next level win screen, and the 10 min timer starts then (see 7.2).`,`Thấp nhất. Level Complete: có thể bị Starter Pack hoặc Remove Ads chặn. Phiên chơi mới: chỉ bị Starter Pack chặn. Bị chặn: hiện ở màn hình thắng của màn tiếp theo, timer 10 phút bắt đầu từ lúc đó (xem 7.2).`)],
-        [t('Store & Icon','Cửa hàng & Biểu tượng'),ul([
-          t(`<b>Store:</b> not sold in the store.`,`<b>Cửa hàng:</b> không bán trong cửa hàng.`),
-          t(`<b>Icon:</b> HUD icon with the 10 min countdown, only after the popup shows. Tap to reopen. Hides once claimed or the timer ends.`,`<b>Biểu tượng:</b> trên HUD kèm đồng hồ 10 phút, chỉ sau khi popup hiện. Chạm để mở lại. Ẩn khi đã nhận hoặc hết timer.`)])]
-      ]));
-
-  B['skip-retry']=
-    `<p class="sec-intro">${t(`Two rewarded-ad helpers for a hard level, side by side.`,`Hai công cụ hỗ trợ bằng quảng cáo có thưởng khi gặp màn khó, đặt cạnh nhau.`)}</p>`+
-    table(t('Skip Level and Retry with Booster','Bỏ qua màn và Chơi lại kèm công cụ'),
-      ['',nm('Skip Level','Bỏ qua màn'),nm('Retry with Booster','Chơi lại kèm công cụ')],[
-      [t('Unlock','Mở khóa'),t('From the start','Có ngay từ đầu'),t(`${P.bo3} unlocks`,`Khi mở ${P.bo3}`)],
-      [t('Shows when','Khi nào hiện'),t('Lose screen, after 3 fails in a row on the same level (resets on win or skip)','Màn hình thua, sau 3 lần thua liên tiếp cùng một màn (tính lại khi thắng hoặc bỏ qua)'),t(`Restarting a level (lose screen or restart button) with 0 ${P.bo3}, before the level starts`,`Chơi lại một màn (màn hình thua hoặc nút chơi lại) khi có 0 ${P.bo3}, trước khi màn bắt đầu`)],
-      [t('Cost','Chi phí'),t('1 rewarded ad or coins (remote config)','1 quảng cáo có thưởng hoặc xu (cấu hình từ xa)'),t('1 rewarded ad','1 quảng cáo có thưởng')],
-      [t('Result','Kết quả'),t('Level counts as done. No coins, no bonus. Counts toward element unlock. No life lost.','Màn tính là đã qua. Không xu, không thưởng thêm. Vẫn tính vào thanh mở khóa yếu tố. Không mất tim.'),t(`Restart with 1 free ${P.bo3} selected. Not from inventory, lost if unused. Restart still costs 1 life.`,`Chơi lại với 1 ${P.bo3} miễn phí đã chọn sẵn. Không trừ kho, mất nếu không dùng. Chơi lại vẫn tốn 1 tim.`)],
-      [t('Daily limit','Giới hạn ngày'),'<code>skip_level_max_per_day</code> = 3','<code>retry_booster_max_per_day</code> = 3'],
-      [t('Not allowed','Không áp dụng'),t('First 3 levels','3 màn đầu tiên'),t('First 3 levels','3 màn đầu tiên')],
-      [t('Ad fails or closed','Quảng cáo lỗi hoặc bị đóng'),t('No skip, stay on lose screen, not counted','Không bỏ qua, ở lại màn hình thua, không tính lượt'),t('Normal restart, not counted','Chơi lại bình thường, không tính lượt')]
-    ],'wide')+
-    `<p class="note">${t(`Limits reset each new day (device time). At the limit, the button or popup hides.`,`Giới hạn tính lại mỗi ngày mới (giờ thiết bị). Khi hết lượt, nút hoặc popup được ẩn.`)}</p>`;
+  B['live-ops']=`<p class="sec-intro">${t(`The rules for every offer popup (7.1, 7.2).`,
+    `Quy tắc cho mọi popup ưu đãi (7.1, 7.2).`)}</p>`;
 
   /* ===== 8. Change note ===== */
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
     day(t('3 November 2026','03/11/2026'),
+      ent(nm('Elements','Yếu tố đặc biệt'),ul([
+        t(`Locked Block becomes ${P.el2}: it moves, but cannot clear until the counter shows its color.`,`Khối bị khóa đổi thành ${P.el2}: di chuyển được, nhưng chỉ dọn được khi bộ đếm về 0 và khối hiện màu.`),
+        t(`New ${P.el6} (level 32) and ${P.el7} (level ${tbd}), with demos, tutorial rows, SFX and fail-safe cases.`,`Thêm ${P.el6} (màn 32) và ${P.el7} (màn ${tbd}), kèm minh họa, dòng hướng dẫn, SFX và trường hợp chống kẹt.`)
+      ])))+
+    day(t('2 November 2026','02/11/2026'),
       ent(t('New document','Tài liệu mới'),ul([
-        t(`Created this GDD from the template and the Jelly Block core loop.`,`Tạo tài liệu này từ template và vòng chơi chính của Jelly Block.`),
-        t(`Added 3 elements (${P.el1}, ${P.el2}, ${P.el3}) and 3 boosters (${P.bo1}, ${P.bo2}, ${P.bo3}), each with a demo.`,`Thêm 3 yếu tố (${P.el1}, ${P.el2}, ${P.el3}) và 3 công cụ (${P.bo1}, ${P.bo2}, ${P.bo3}), mỗi mục có minh họa.`),
-        t(`Unlock levels and counter values are TBD until the config sheet is ready.`,`Màn mở khóa và giá trị bộ đếm để TBD cho tới khi có sheet config.`),
-        t(`Syringe-like tubes on a machine, cans in a pile (free = nothing resting on it), tube count set per level.`,`Ống giống ống tiêm gắn trên máy, lon xếp thành đống (tự do = không bị đè), số ống đặt theo từng màn.`)
+        t(`Created this GDD from the template and the Jelly Block rules.`,`Tạo tài liệu này từ template và luật chơi Jelly Block.`),
+        t(`Play-screen sketch drawn from the level 23 screenshot. New demos for 5 elements and 3 boosters.`,`Hình màn chơi vẽ theo screenshot màn 23. Minh họa mới cho 5 yếu tố và 3 công cụ.`)
       ])));
 
   /* ----- hero ----- */
   const legend=[
-    ['A',nm('Jam tubes','Ống jam'),t('Jam in sets of 4 portions. Only the bottom set pours.','Jam xếp thành bộ 4 phần. Chỉ bộ ở đáy được rót.')],
-    ['B',nm('Fill spots','Ô rót'),t('One under each tube. A bottle of the matching color fills here.','Mỗi ống có 1 ô. Chai cùng màu được rót ở đây.')],
-    ['C',nm('Waiting tray','Khay chờ'),t(`1 slot at the start. ${P.bo1} adds more, up to 5. Full with no match: the level is lost.`,`Đầu màn có 1 ô. ${P.bo1} thêm ô, tối đa 5. Đầy mà không khớp màu: thua màn.`)],
-    ['D',nm('Bottle pile','Đống chai'),t('Bottles in layers. Shaded ones are covered; only free bottles can be tapped.','Chai xếp nhiều lớp. Chai bị tô tối đang bị đè; chỉ chai tự do mới chạm được.')]
+    ['A',t('HUD','HUD'),t('Coins, level number, pause and restart.','Xu, số màn, nút tạm dừng và chơi lại.')],
+    ['B',nm('Timer','Đồng hồ'),t('Counts down. At 0 the level is lost.','Đếm ngược. Về 0 là thua màn.')],
+    ['C',t('Board and studs','Bàn chơi và chốt'),t('Walled grid. Round and X studs sit in fixed cells.','Lưới ô có tường. Chốt tròn và chốt chữ X nằm cố định.')],
+    ['D',nm('Blocks','Khối'),t('Jelly blocks of many shapes, each with one hole in a corner.','Khối thạch nhiều hình dạng, mỗi khối có 1 lỗ ở góc.')],
+    ['E',t('Elements','Yếu tố đặc biệt'),t(`${P.el2} (5 left), ${P.el1}s and X-hole blocks.`,`${P.el2} (còn 5), ${P.el1} và khối có lỗ chữ X.`)]
   ];
   const hero=`<div class="hero" id="top" data-sec="top" data-spy="top">
     <div>
       <h1>${GAME}</h1>
       <p class="kind">${ui.sub}</p>
-      <p class="pitch">${t(`Send bottles up to the jam tubes, fill each one with jam of its color, and keep the waiting tray from filling up.`,
-                           `Gửi chai lên các ống jam, rót đầy từng chai bằng jam cùng màu, và đừng để khay chờ bị đầy.`)}</p>
+      <p class="pitch">${t(`Slide jelly blocks so each hole lands on a stud of its color, and clear the board before time runs out.`,
+                           `Trượt các khối thạch để lỗ khớp vào chốt cùng màu, và dọn sạch bàn chơi trước khi hết giờ.`)}</p>
       <ul class="legend">${legend.map(g=>`<li><button type="button" data-part="${g[0]}" aria-pressed="false"><span class="pinl" data-nosearch>${g[0]}</span><span><b>${g[1]}</b><span class="d">${g[2]}</span></span></button></li>`).join('')}</ul>
     </div>
     <figure class="field${paused?' paused':''}" id="field">
-      <div class="field-box">${fieldSVG(t('Sketch of the play screen: three jam tubes on top with fill spots under them, a waiting tray with 1 slot, and a pile of bottles in layers below. The red bottle goes up, fills with red jam and flies off.','Hình minh họa màn chơi: ba ống jam phía trên, dưới mỗi ống là ô rót, khay chờ 1 ô, và đống chai nhiều lớp bên dưới. Chai đỏ đi lên, được rót jam đỏ rồi bay đi.'))}</div>
+      <div class="field-box">${fieldSVG(t('Sketch of level 23: a walled 9 by 10 board with colored studs, jelly blocks with holes, a grey hidden block showing 5, and arrow blocks. The purple block slides left, then the long red block slides up onto the red stud and clears.','Hình minh họa màn 23: bàn chơi 9 × 10 ô có tường, các chốt màu, khối thạch có lỗ, khối ẩn màu xám hiện số 5 và các khối mũi tên. Khối tím trượt sang trái, rồi khối đỏ dài trượt lên chốt đỏ và biến mất.'))}</div>
       <div class="field-foot"><button type="button" class="pause" id="pauseBtn">${paused?ui.play:ui.pause}</button></div>
-      <figcaption>${t(`Sketch of the play screen. Bottles stand in for the cans. Hover a legend row to highlight that part.`,
-                       `Hình minh họa màn chơi. Chai được vẽ thay cho lon. Rê chuột vào từng dòng chú thích để làm nổi bật phần tương ứng.`)}</figcaption>
+      <figcaption>${t(`Level 23, redrawn from the reference screenshot. Hover a legend row to highlight that part.`,
+                       `Màn 23, vẽ lại theo screenshot tham khảo. Rê chuột vào từng dòng chú thích để làm nổi bật phần tương ứng.`)}</figcaption>
     </figure>
   </div>`;
 
@@ -1557,7 +1564,7 @@ function tocHTML(l){
 /* ---------- state ---------- */
 const root=document.documentElement,main=$('#main'),rail=$('#rail'),panel=$('#panel'),toc=$('#toc'),results=$('#results'),
       q=$('#q'),hint=$('#hint'),clr=$('#clr'),menuBtn=$('#menuBtn');
-const KEY='jellyBlockGddLang';
+const KEY='capsSortingGddLang';
 let lang='en';
 try{if(/^vi/i.test(navigator.language||''))lang='vi';}catch(e){}
 try{const s=localStorage.getItem(KEY);if(s==='en'||s==='vi')lang=s;}catch(e){}
