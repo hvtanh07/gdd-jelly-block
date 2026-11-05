@@ -745,18 +745,21 @@ const DEMOS={
       ...puffTracks(4.5)
     ]},
   /* ----- booster demos ----- */
-  shrink:{D:6.4, /* the big block shrinks to one cell at its hole, then slips through the gap */
-    svg:()=>{const o=DO4;
-      return jboard(o,B64)+jstud(o,5,2,7)+jblock(o,[[3,0],[3,1]],2,[3,0])+jblock(o,[[3,3],[4,3]],4,[4,3])+
-        `<g class="big">${jblock(o,[[1,1],[2,1],[1,2],[2,2]],7,[2,2])}</g>`+
-        `<g class="one" style="opacity:0">${jblock(o,[[2,2]],7,[2,2])}</g>`+
-        tap(cc(o,1,1)[0]+14,cc(o,1,1)[1]+14)+puff(cc(o,5,2)[0],cc(o,5,2)[1]);},
+  magnet:{D:6.2, /* tap a red stud: every red block and red stud flies into it and clears */
+    svg:()=>{const o=DO4,[mx,my]=cc(o,0,0);
+      return jboard(o,B64)+jstud(o,5,1,2)+jstud(o,2,3,4)+jblock(o,[[2,1],[2,2]],2,[2,1])+jblock(o,[[4,2],[4,3]],4,[4,3])+
+        `<g class="m0">${jstud(o,0,0,1)}</g><g class="s1">${jstud(o,5,3,1)}</g>`+
+        `<g class="m1">${jblock(o,[[1,2]],1,[1,2])}</g><g class="m2">${jblock(o,[[3,0],[4,0]],1,[4,0])}</g>`+
+        `<g class="mg" style="opacity:0"><path d="M${mx-9} ${my-24}v8a9 9 0 0 0 18 0v-8" fill="none" stroke="var(--c1)" stroke-width="6"/><rect x="${mx-12}" y="${my-27}" width="7" height="5" fill="#fff"/><rect x="${mx+5}" y="${my-27}" width="7" height="5" fill="#fff"/></g>`+
+        tap(mx,my)+puff(mx,my);},
     tracks:()=>[
       ...tapTracks(.5),
-      ['.big','transform',[[.9,'scale(1)'],[1.3,'scale(.4)']]],['.big','opacity',[[0,1],[1.2,1],[1.35,0]]],
-      ['.one','opacity',[[0,0],[1.25,0],[1.4,1],[3.1,1],[3.25,0]]],
-      ['.one','transform',[[1.25,T(0,0,.3)],[1.6,T(0,0,1)],[2.2,T(0,0)],[2.9,T(84,0)],[3.05,T(84,0,1.12)],[3.3,T(84,0,.2)]]],
-      ...puffTracks(3.2)
+      ['.mg','opacity',[[0,0],[.8,0],[1.0,1],[2.6,1],[2.8,0]]],['.mg','transform',[[.8,T(0,6)],[1.0,T(0,0)],[1.3,T(0,-2)],[1.6,T(0,0)]]],
+      ['.m1','transform',[[1.2,T(0,0)],[2.0,T(-28,-56,.3)]]],['.m1','opacity',[[0,1],[1.9,1],[2.0,0]]],
+      ['.m2','transform',[[1.3,T(0,0)],[2.1,T(-98,0,.3)]]],['.m2','opacity',[[0,1],[2.0,1],[2.1,0]]],
+      ['.s1','transform',[[1.4,T(0,0)],[2.2,T(-140,-84,.3)]]],['.s1','opacity',[[0,1],[2.1,1],[2.2,0]]],
+      ['.m0','transform',[[2.2,'scale(1)'],[2.35,'scale(1.25)'],[2.6,'scale(.2)']]],['.m0','opacity',[[0,1],[2.5,1],[2.6,0]]],
+      ...puffTracks(2.45)
     ]},
   extraTime:{D:5.4, /* tap the booster: +30s flies to the timer */
     svg:()=>`<rect class="trackfill" x="40" y="34" width="120" height="40" rx="20" stroke="var(--c6)" stroke-width="3"/>`+
@@ -771,7 +774,7 @@ const DEMOS={
       ['.tv0','opacity',[[0,1],[1.95,1],[2.05,0]]],['.tv1','opacity',[[0,0],[1.95,0],[2.05,1]]],
       ['.tm','transform',[[1.95,'scale(1)'],[2.15,'scale(1.2)'],[2.45,'scale(1)']]]
     ]},
-  remove:{D:5.8, /* tap a block: it is removed at once and the path opens */
+  hand:{D:5.8, /* tap a block: it is removed at once and the path opens */
     svg:()=>{const o=DO4;
       return jboard(o,B64)+jstud(o,2,3,2)+jstud(o,5,0,4)+jblock(o,[[4,2],[5,2]],7,[4,2])+jblock(o,[[0,1],[0,2]],3,[0,1,'x'])+
         `<g class="bb">${jblock(o,[[2,0]],2,[2,0])}</g><g class="rk">${jblock(o,[[1,1],[2,1],[3,1]],1,[1,1])}</g>`+
@@ -917,12 +920,12 @@ function view(l){
   const N={
     el1:nm('Arrow Block','Khối mũi tên'),el2:nm('Hidden Block','Khối ẩn màu'),el3:nm('X Stud','Chốt chữ X'),
     el4:nm('Linked Block','Khối liên kết'),el5:nm('Spoon Lock','Khóa thìa'),el6:nm('Frozen Block','Khối đóng băng'),el7:nm('Frozen Stud','Chốt đóng băng'),
-    bo1:nm('Shrink','Thu nhỏ'),bo2:nm('Extra Time','Thêm giờ'),bo3:nm('Remove','Xóa khối')
+    bo1:nm('Hand','Bàn tay'),bo2:nm('Extra Time','Thêm giờ'),bo3:nm('Magnet','Nam châm')
   };
   const P={ /* plain names for running text and tables */
     el1:t('Arrow Block','Khối mũi tên'),el2:t('Hidden Block','Khối ẩn màu'),el3:t('X Stud','Chốt chữ X'),
     el4:t('Linked Block','Khối liên kết'),el5:t('Spoon Lock','Khóa thìa'),el6:t('Frozen Block','Khối đóng băng'),el7:t('Frozen Stud','Chốt đóng băng'),
-    bo1:t('Shrink','Thu nhỏ'),bo2:t('Extra Time','Thêm giờ'),bo3:t('Remove','Xóa khối')
+    bo1:t('Hand','Bàn tay'),bo2:t('Extra Time','Thêm giờ'),bo3:t('Magnet','Nam châm')
   };
   const withEl=t('With elements','Khi gặp yếu tố đặc biệt');
 
@@ -1087,9 +1090,9 @@ function view(l){
     xStud:t('A round hole is blocked by the X stud. The X-hole block fits and clears.','Lỗ tròn bị chốt chữ X chặn lại. Khối có lỗ chữ X khớp vào và biến mất.'),
     linked:t('The pair moves as one. Red clears, the link breaks, blue moves on alone.','Cặp khối di chuyển cùng nhau. Khối đỏ biến mất, liên kết gỡ, khối xanh đi tiếp một mình.'),
     spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
-    shrink:t('The player taps the big block. It shrinks to one cell at its hole and fits through the gap.','Người chơi chạm vào khối lớn. Khối thu về 1 ô tại vị trí lỗ và đi lọt qua khe.'),
+    magnet:t('The player taps a red stud. Every red block and red stud flies into it and clears.','Người chơi chạm vào một núm đỏ. Mọi khối đỏ và núm đỏ bay vào núm đó và biến mất.'),
     extraTime:t('The player taps the booster. 30 seconds are added to the timer.','Người chơi chạm vào công cụ. Đồng hồ được cộng 30 giây.'),
-    remove:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
+    hand:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
   const demo=(k,c)=>{const cp=c||DCAP[k]||'';return DEMOS[k]?`<figure class="demo" data-demo="${k}"><div class="demo-box"><svg viewBox="0 0 200 196" role="img" aria-label="${esc(cp.replace(/<[^>]+>/g,''))}"><g class="scene">${DEMOS[k].svg()}</g></svg>`+
@@ -1160,30 +1163,29 @@ function view(l){
 
   B['booster-mechanics']=
     ent(N.bo1,ul([
-      t(`The player taps any block. It turns into a 1-cell block.`,`Người chơi chạm vào một khối bất kỳ. Khối biến thành khối 1 ô.`),
-      t(`The new block sits where the hole was before shrinking.`,`Khối mới nằm đúng ô có lỗ trước khi thu nhỏ.`),
-      withEl+':'+ul([
-        t(`${P.el1}: becomes a normal block.`,`${P.el1}: trở thành khối thường.`),
-        t(`${P.el2}: ${tbd}.`,`${P.el2}: ${tbd}.`),
-        t(`${P.el6}: cannot be picked.`,`${P.el6}: không chọn được.`),
-        t(`X-shaped hole: keeps its X shape.`,`Lỗ chữ X: giữ nguyên hình chữ X.`),
-        t(`${P.el4}: the shrunk block leaves its link.`,`${P.el4}: khối được thu nhỏ rời khỏi liên kết.`),
-        t(`${P.el5}: a spoon on the block activates at once. A locked hole on the block stays locked.`,`${P.el5}: thìa trên khối kích hoạt ngay. Lỗ khóa trên khối vẫn giữ nguyên.`)
-      ])
-    ]),unlockB(3),demo('shrink'))+
-    ent(N.bo2,ul([
-      t(`Adds 30 s to the timer at once.`,`Cộng ngay 30 giây vào đồng hồ.`),
-      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
-    ]),unlockB(5),demo('extraTime'))+
-    ent(N.bo3,ul([
-      t(`The player taps any block. It is removed from the board at once.`,`Người chơi chạm vào một khối bất kỳ. Khối bị xóa khỏi bàn ngay.`),
+      t(`The player taps any block. It is removed from the level at once.`,`Người chơi chạm vào một khối bất kỳ. Khối bị xóa khỏi màn ngay.`),
       withEl+':'+ul([
         t(`Can be picked: ${P.el1}, ${P.el6}, block with an X-shaped hole, one block of a ${P.el4} group, block holding a spoon.`,`Chọn được: ${P.el1}, ${P.el6}, khối có lỗ chữ X, một khối trong nhóm ${P.el4}, khối chứa thìa.`),
         t(`${P.el2}: ${tbd}.`,`${P.el2}: ${tbd}.`),
         t(`${P.el4}: only the tapped block goes. Its link breaks at once.`,`${P.el4}: chỉ xóa khối được chạm. Liên kết của nó gỡ ngay.`),
         t(`${P.el5}: a spoon on the removed block activates at once.`,`${P.el5}: thìa trên khối bị xóa kích hoạt ngay.`)
       ])
-    ]),unlockB(10),demo('remove'));
+    ]),unlockB(3),demo('hand'))+
+    ent(N.bo2,ul([
+      t(`Adds 30 s to the timer at once.`,`Cộng ngay 30 giây vào đồng hồ.`),
+      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
+    ]),unlockB(5),demo('extraTime'))+
+    ent(N.bo3,ul([
+      t(`The player taps a stud.`,`Người chơi chạm vào một núm.`),
+      t(`Every stud and every block of that stud’s color clears from the level at once.`,`Mọi núm và mọi khối cùng màu với núm đó biến mất khỏi màn ngay.`),
+      withEl+':'+ul([
+        t(`${P.el3} and blocks with an X-shaped hole of that color clear too.`,`${P.el3} và khối có lỗ chữ X cùng màu cũng biến mất.`),
+        t(`${P.el4}: blocks of that color leave their group. Links break as when a block clears.`,`${P.el4}: các khối cùng màu rời khỏi nhóm. Liên kết gỡ như khi một khối được dọn.`),
+        t(`${P.el5}: spoons on the cleared blocks activate at once.`,`${P.el5}: thìa trên các khối bị dọn kích hoạt ngay.`),
+        t(`${P.el2} (color still hidden), ${P.el6}, ${P.el7}: ${tbd}.`,`${P.el2} (chưa hiện màu), ${P.el6}, ${P.el7}: ${tbd}.`),
+        t(`Whether the cleared blocks count down element counters: ${tbd}.`,`Các khối bị dọn có tính vào bộ đếm của yếu tố hay không: ${tbd}.`)
+      ])
+    ]),unlockB(10),demo('magnet'));
 
   /* ===== 2. FTUE & tutorial ===== */
   B['ftue--tutorial']=`<p class="sec-intro">${t(
@@ -1240,9 +1242,9 @@ function view(l){
   B['booster-tutorial']=table(t('Booster tutorial','Hướng dẫn công cụ hỗ trợ'),
     [t('Booster','Công cụ'),t('Popup text','Nội dung popup'),t('Unlocks at level','Mở ở màn'),t('Free boosters','Số lượt tặng')],
     [
-      [N.bo1,popup('Shrink down any block!','Thu nhỏ khối bất kỳ!'),lvl(3),lvl(3)],
+      [N.bo1,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(3),lvl(3)],
       [N.bo2,popup('Add 30s to the timer!','Cộng 30 giây vào đồng hồ!'),lvl(5),lvl(3)],
-      [N.bo3,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(10),lvl(3)]
+      [N.bo3,popup('Clear a whole color!','Dọn sạch một màu!'),lvl(10),lvl(3)]
     ]);
 
   /* every element and booster with its unlock level, sorted by level */
@@ -1294,9 +1296,9 @@ function view(l){
     ent(N.el7,params([[look,t('Ice cap over the stud, color visible, countdown number on top.','Lớp băng phủ trên chốt, vẫn thấy màu, con số đếm ngược ở trên.')],[an,t('At 0 the ice melts away.','Về 0 thì băng tan.')]]));
 
   B['booster-object-concept']=
-    ent(N.bo1,params([[an,t('The block squeezes into its hole cell and pops back as a 1-cell block.','Khối co lại về ô có lỗ rồi bật ra thành khối 1 ô.')]]))+
+    ent(N.bo1,params([[an,t('A hand taps the block; it bursts into a puff and disappears.','Bàn tay chạm vào khối; khối vỡ thành làn khói và biến mất.')]]))+
     ent(N.bo2,params([[an,t('“+30s” flies from the booster button to the timer; the timer pulses.','Chữ “+30s” bay từ nút công cụ lên đồng hồ; đồng hồ nảy nhẹ.')]]))+
-    ent(N.bo3,params([[an,t('The tapped block bursts into a puff and disappears.','Khối được chạm vỡ thành làn khói và biến mất.')]]));
+    ent(N.bo3,params([[an,t('A magnet appears over the tapped stud. Blocks and studs of that color fly into it and pop.','Nam châm hiện trên núm được chạm. Khối và núm cùng màu bay vào rồi biến mất.')]]));
 
   /* ===== 4. SFX & haptics ===== */
   /* FIXED: the UI rows are the same in every project. Haptic: 0 none, 1 weak, 2 medium, 3 strong, null TBD */
@@ -1317,9 +1319,9 @@ function view(l){
     ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),null],
     ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
     ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),null],
-    ['Shrink','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
+    ['Hand','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
     ['Extra Time','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
-    ['Remove','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
+    ['Magnet','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
   ];
   B['sfx--haptics']=table(t('SFX and haptics','Âm thanh và rung'),
     [t('Name','Tên'),t('Category','Nhóm'),t('Plays when','Phát khi'),t('Haptic','Rung')],
@@ -1508,6 +1510,11 @@ function view(l){
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
+    day(t('5 November 2026','05/11/2026'),
+      ent(nm('Boosters','Công cụ hỗ trợ'),ul([
+        t(`Booster 1 is now ${P.bo1}: pick a block and remove it from the level. It takes over the old Remove rules.`,`Công cụ 1 đổi thành ${P.bo1}: chọn 1 khối và xóa khỏi màn. Dùng lại luật của Remove cũ.`),
+        t(`Booster 3 is now ${P.bo3}: pick a stud and clear every stud and block of its color. Shrink and Remove are gone.`,`Công cụ 3 đổi thành ${P.bo3}: chọn 1 núm và dọn mọi núm, khối cùng màu. Bỏ Shrink và Remove.`)
+      ])))+
     day(t('3 November 2026','03/11/2026'),
       ent(nm('Elements','Yếu tố đặc biệt'),ul([
         t(`Locked Block becomes ${P.el2}: it moves, but cannot clear until the counter shows its color.`,`Khối bị khóa đổi thành ${P.el2}: di chuyển được, nhưng chỉ dọn được khi bộ đếm về 0 và khối hiện màu.`),
