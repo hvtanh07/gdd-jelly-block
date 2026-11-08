@@ -761,18 +761,21 @@ const DEMOS={
       ['.m0','transform',[[2.2,'scale(1)'],[2.35,'scale(1.25)'],[2.6,'scale(.2)']]],['.m0','opacity',[[0,1],[2.5,1],[2.6,0]]],
       ...puffTracks(2.45)
     ]},
-  extraTime:{D:5.4, /* tap the booster: +30s flies to the timer */
+  timeFreeze:{D:6.6, /* tap the booster: the timer stops for 30 s, then runs again */
     svg:()=>`<rect class="trackfill" x="40" y="34" width="120" height="40" rx="20" stroke="var(--c6)" stroke-width="3"/>`+
       `<circle cx="60" cy="54" r="13" fill="var(--c4)" stroke="#fff" stroke-width="2"/><path d="M60 47v7l5 3" fill="none" stroke="#18203A" stroke-width="2.4" stroke-linecap="round"/>`+
-      `<g class="tm">${jcount(112,54,['00:12','00:42'],'tv')}</g>`+
-      `<g class="btn"><circle class="f8" cx="100" cy="148" r="25"/><text class="bn sm l" x="100" y="148" dy=".35em">+30s</text></g>`+
-      `<text class="fly bn sm" x="100" y="148" dy=".35em" style="opacity:0;fill:var(--c3)">+30s</text>`+tap(100,148),
+      `<g class="tm">${jcount(112,54,['00:12','00:11','00:10'],'tv')}</g>`+
+      `<rect class="frz" x="40" y="34" width="120" height="40" rx="20" fill="var(--ice)" fill-opacity=".45" stroke="#fff" stroke-width="2" style="opacity:0"/>`+
+      `<rect x="40" y="86" width="120" height="8" rx="4" class="trackfill frzb0" style="opacity:0"/><rect class="frzb" x="40" y="86" width="120" height="8" rx="4" fill="var(--ice)" style="opacity:0;transform-origin:left center"/>`+
+      `<g class="btn"><circle cx="100" cy="148" r="25" fill="var(--ice)"/><path d="M100.0 136.0L100.0 160.0" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M89.6 142.0L110.4 154.0" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M110.4 142.0L89.6 154.0" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>`+tap(100,148),
     tracks:()=>[
-      ...tapTracks(.8),
-      ['.btn','transform',[[.9,'scale(1)'],[1.05,'scale(.9)'],[1.25,'scale(1)']]],
-      ['.fly','opacity',[[0,0],[1.1,0],[1.2,1],[1.9,1],[2.0,0]]],['.fly','transform',[[1.1,T(0,0)],[1.95,T(12,-94)]]],
-      ['.tv0','opacity',[[0,1],[1.95,1],[2.05,0]]],['.tv1','opacity',[[0,0],[1.95,0],[2.05,1]]],
-      ['.tm','transform',[[1.95,'scale(1)'],[2.15,'scale(1.2)'],[2.45,'scale(1)']]]
+      ['.tv0','opacity',[[0,1],[.6,1],[.65,0]]],['.tv1','opacity',[[0,0],[.6,0],[.65,1],[5.6,1],[5.65,0]]],['.tv2','opacity',[[0,0],[5.6,0],[5.65,1]]],
+      ...tapTracks(1.0),
+      ['.btn','transform',[[1.1,'scale(1)'],[1.25,'scale(.9)'],[1.45,'scale(1)']]],
+      ['.frz','opacity',[[0,0],[1.3,0],[1.5,1],[4.9,1],[5.2,0]]],
+      ['.frzb0','opacity',[[0,0],[1.3,0],[1.5,1],[4.9,1],[5.2,0]]],
+      ['.frzb','opacity',[[0,0],[1.3,0],[1.5,1],[4.9,1],[5.0,0]]],['.frzb','transform',[[1.5,'scaleX(1)','linear'],[4.9,'scaleX(0)']]],
+      ['.tm','transform',[[5.2,'scale(1)'],[5.35,'scale(1.15)'],[5.6,'scale(1)']]]
     ]},
   hand:{D:5.8, /* tap a block: it is removed at once and the path opens */
     svg:()=>{const o=DO4;
@@ -920,12 +923,12 @@ function view(l){
   const N={
     el1:nm('Arrow Block','Khối mũi tên'),el2:nm('Hidden Block','Khối ẩn màu'),el3:nm('X Stud','Chốt chữ X'),
     el4:nm('Linked Block','Khối liên kết'),el5:nm('Spoon Lock','Khóa thìa'),el6:nm('Frozen Block','Khối đóng băng'),el7:nm('Frozen Stud','Chốt đóng băng'),
-    bo1:nm('Hand','Bàn tay'),bo2:nm('Extra Time','Thêm giờ'),bo3:nm('Magnet','Nam châm')
+    bo1:nm('Hand','Bàn tay'),bo2:nm('Time Freeze','Đóng băng thời gian'),bo3:nm('Magnet','Nam châm')
   };
   const P={ /* plain names for running text and tables */
     el1:t('Arrow Block','Khối mũi tên'),el2:t('Hidden Block','Khối ẩn màu'),el3:t('X Stud','Chốt chữ X'),
     el4:t('Linked Block','Khối liên kết'),el5:t('Spoon Lock','Khóa thìa'),el6:t('Frozen Block','Khối đóng băng'),el7:t('Frozen Stud','Chốt đóng băng'),
-    bo1:t('Hand','Bàn tay'),bo2:t('Extra Time','Thêm giờ'),bo3:t('Magnet','Nam châm')
+    bo1:t('Hand','Bàn tay'),bo2:t('Time Freeze','Đóng băng thời gian'),bo3:t('Magnet','Nam châm')
   };
   const withEl=t('With elements','Khi gặp yếu tố đặc biệt');
 
@@ -946,7 +949,7 @@ function view(l){
       t(`Each level has its own time limit, set in the level config.`,`Mỗi màn có giới hạn thời gian riêng, đặt trong level config.`),
       t(`The timer counts down on the HUD. At 0 the level is over.`,`Đồng hồ đếm ngược trên HUD. Về 0 thì màn kết thúc.`),
       t(`Time per level: ${tbd}.`,`Thời gian mỗi màn: ${tbd}.`),
-      t(`More time comes from revive (+1 min 30 s) or the ${P.bo2} booster (+30 s).`,`Có thêm giờ khi hồi sinh (+1 phút 30 giây) hoặc dùng công cụ ${P.bo2} (+30 giây).`)
+      t(`Revive adds 1 min 30 s. The ${P.bo2} booster stops the timer for 30 s.`,`Hồi sinh cộng thêm 1 phút 30 giây. Công cụ ${P.bo2} dừng đồng hồ trong 30 giây.`)
     ]));
 
   B['main-game-mechanics']=
@@ -1091,7 +1094,7 @@ function view(l){
     linked:t('The pair moves as one. Red clears, the link breaks, blue moves on alone.','Cặp khối di chuyển cùng nhau. Khối đỏ biến mất, liên kết gỡ, khối xanh đi tiếp một mình.'),
     spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
     magnet:t('The player taps a red stud. Every red block and red stud flies into it and clears.','Người chơi chạm vào một núm đỏ. Mọi khối đỏ và núm đỏ bay vào núm đó và biến mất.'),
-    extraTime:t('The player taps the booster. 30 seconds are added to the timer.','Người chơi chạm vào công cụ. Đồng hồ được cộng 30 giây.'),
+    timeFreeze:t('The player taps the booster. The timer freezes for 30 seconds, then counts down again.','Người chơi chạm vào công cụ. Đồng hồ dừng trong 30 giây, sau đó đếm ngược lại.'),
     hand:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
@@ -1172,9 +1175,11 @@ function view(l){
       ])
     ]),unlockB(3),demo('hand'))+
     ent(N.bo2,ul([
-      t(`Adds 30 s to the timer at once.`,`Cộng ngay 30 giây vào đồng hồ.`),
-      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`)
-    ]),unlockB(5),demo('extraTime'))+
+      t(`Stops the timer for 30 s. The player keeps playing while it is stopped.`,`Dừng đồng hồ trong 30 giây. Người chơi vẫn chơi tiếp trong lúc đồng hồ dừng.`),
+      t(`After 30 s the timer counts down again from where it stopped.`,`Hết 30 giây, đồng hồ đếm ngược tiếp từ chỗ đã dừng.`),
+      t(`No target to pick. Tap the booster and it applies.`,`Không cần chọn mục tiêu. Chạm vào công cụ là có hiệu lực.`),
+      t(`Using it again while the timer is frozen: ${tbd}.`,`Dùng tiếp khi đồng hồ đang dừng: ${tbd}.`)
+    ]),unlockB(5),demo('timeFreeze'))+
     ent(N.bo3,ul([
       t(`The player taps a stud.`,`Người chơi chạm vào một núm.`),
       t(`Every stud and every block of that stud’s color clears from the level at once.`,`Mọi núm và mọi khối cùng màu với núm đó biến mất khỏi màn ngay.`),
@@ -1243,7 +1248,7 @@ function view(l){
     [t('Booster','Công cụ'),t('Popup text','Nội dung popup'),t('Unlocks at level','Mở ở màn'),t('Free boosters','Số lượt tặng')],
     [
       [N.bo1,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(3),lvl(3)],
-      [N.bo2,popup('Add 30s to the timer!','Cộng 30 giây vào đồng hồ!'),lvl(5),lvl(3)],
+      [N.bo2,popup('Freeze the timer for 30s!','Dừng đồng hồ trong 30 giây!'),lvl(5),lvl(3)],
       [N.bo3,popup('Clear a whole color!','Dọn sạch một màu!'),lvl(10),lvl(3)]
     ]);
 
@@ -1297,7 +1302,7 @@ function view(l){
 
   B['booster-object-concept']=
     ent(N.bo1,params([[an,t('A hand taps the block; it bursts into a puff and disappears.','Bàn tay chạm vào khối; khối vỡ thành làn khói và biến mất.')]]))+
-    ent(N.bo2,params([[an,t('“+30s” flies from the booster button to the timer; the timer pulses.','Chữ “+30s” bay từ nút công cụ lên đồng hồ; đồng hồ nảy nhẹ.')]]))+
+    ent(N.bo2,params([[an,t('Ice covers the timer and a bar under it drains over 30 s. Then the ice breaks and the timer runs again.','Băng phủ lên đồng hồ, thanh bên dưới giảm dần trong 30 giây. Sau đó băng vỡ và đồng hồ chạy lại.')]]))+
     ent(N.bo3,params([[an,t('A magnet appears over the tapped stud. Blocks and studs of that color fly into it and pop.','Nam châm hiện trên núm được chạm. Khối và núm cùng màu bay vào rồi biến mất.')]]));
 
   /* ===== 4. SFX & haptics ===== */
@@ -1320,7 +1325,7 @@ function view(l){
     ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
     ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),null],
     ['Hand','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
-    ['Extra Time','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
+    ['Time Freeze','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
     ['Magnet','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
   ];
   B['sfx--haptics']=table(t('SFX and haptics','Âm thanh và rung'),
@@ -1347,7 +1352,7 @@ function view(l){
     ])+
     rc(t('Timer','Đồng hồ'),[
       ['revive_extra_time_seconds',t('Time added to the timer on each revive','Thời gian cộng vào đồng hồ mỗi lần hồi sinh'),'90',t('sec','giây')],
-      ['booster_extra_time_seconds',t(`Time added by the ${P.bo2} booster`,`Thời gian công cụ ${P.bo2} cộng thêm`),'30',t('sec','giây')]
+      ['booster_time_freeze_seconds',t(`How long the ${P.bo2} booster stops the timer`,`Thời gian công cụ ${P.bo2} dừng đồng hồ`),'30',t('sec','giây')]
     ])+
     rc(t('Revive','Hồi sinh'),[
       ['revive_base_cost',t('Coin cost of the 1st revive in an attempt','Số xu cho lần hồi sinh đầu tiên trong một lượt chơi'),'900',coin],
@@ -1510,6 +1515,11 @@ function view(l){
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
+    day(t('8 November 2026','08/11/2026'),
+      ent(nm('Boosters','Công cụ hỗ trợ'),ul([
+        t(`Booster 2 is now ${P.bo2}: the timer stops for 30 s. Extra Time (+30 s) is gone.`,`Công cụ 2 đổi thành ${P.bo2}: đồng hồ dừng trong 30 giây. Bỏ Extra Time (+30 giây).`),
+        t(`Remote config key renamed to <code>booster_time_freeze_seconds</code>.`,`Đổi tên key cấu hình từ xa thành <code>booster_time_freeze_seconds</code>.`)
+      ])))+
     day(t('5 November 2026','05/11/2026'),
       ent(nm('Boosters','Công cụ hỗ trợ'),ul([
         t(`Booster 1 is now ${P.bo1}: pick a block and remove it from the level. It takes over the old Remove rules.`,`Công cụ 1 đổi thành ${P.bo1}: chọn 1 khối và xóa khỏi màn. Dùng lại luật của Remove cũ.`),
