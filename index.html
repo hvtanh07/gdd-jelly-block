@@ -478,7 +478,7 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const GAME='Jelly Block';
-const GBASE=50;  /* win-screen base coin reward, matches level_win_coin */
+const GBASE=40;  /* win-screen base coin reward, matches level_win_coin */
 const PID='jelly.block';
 
 /* crown-cap outline: a real bottle cap has 21 teeth */
@@ -807,7 +807,7 @@ const DEMOS={
     svg:()=>`<g class="pp"><rect x="22" y="22" width="156" height="160" rx="22" fill="${RIM}" stroke="#2C2F7A" stroke-width="3"/>`+
       `<text class="bn sm" x="100" y="38" dy=".35em" style="font-size:14px;fill:var(--c4)">LEVEL COMPLETE!</text>`+
       `<g class="cn">${[[86,80],[114,80],[100,70],[92,62],[108,62]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="12" fill="var(--c4)" stroke="#C98A00" stroke-width="2"/>`).join('')}`+
-      `<rect x="80" y="88" width="40" height="16" rx="8" fill="#2C2F7A"/><text class="bn sm" x="100" y="96" dy=".35em" style="font-size:12px">50</text></g>`+
+      `<rect x="80" y="88" width="40" height="16" rx="8" fill="#2C2F7A"/><text class="bn sm" x="100" y="96" dy=".35em" style="font-size:12px">40</text></g>`+
       `<rect x="38" y="112" width="124" height="14" rx="7" class="trackfill"/><rect x="38" y="108" width="20" height="20" rx="5" fill="var(--c2)" stroke="#fff" stroke-width="1.5"/><text class="bn sm" x="108" y="119" dy=".35em" style="font-size:10px">0%</text>`+
       `<g class="cb"><rect x="56" y="140" width="88" height="28" rx="12" fill="var(--c3)" stroke="#fff" stroke-width="2"/><text class="bn sm" x="100" y="154" dy=".35em" style="font-size:13px">Continue</text></g></g>`,
     tracks:()=>[
@@ -1135,7 +1135,7 @@ function view(l){
     timeFreeze:t('The player taps the booster. The timer freezes for 30 seconds, then counts down again.','Người chơi chạm vào công cụ. Đồng hồ dừng trong 30 giây, sau đó đếm ngược lại.'),
     ftueRed:t('Step 1: the hand drags the red block up. Its hole lands on the red stud and both clear.','Bước 1: bàn tay kéo khối đỏ lên. Lỗ khớp vào chốt đỏ, khối và chốt cùng biến mất.'),
     ftueBlue:t('Step 2: the hand drags the blue block down onto the blue stud. The board is empty.','Bước 2: bàn tay kéo khối xanh dương xuống chốt xanh dương. Bàn chơi trống.'),
-    ftueWin:t('Step 3: Level Complete with 50 coins, the progress bar at 0% and Continue.','Bước 3: Level Complete với 50 xu, thanh tiến độ 0% và nút Continue.'),
+    ftueWin:t('Step 3: Level Complete with 40 coins, the progress bar at 0% and Continue.','Bước 3: Level Complete với 40 xu, thanh tiến độ 0% và nút Continue.'),
     hand:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
@@ -1270,7 +1270,7 @@ function view(l){
        t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),dash,dash],
       [t('Move the blue block','Kéo khối xanh dương'),t('The player drags the blue block down 3 cells onto the blue stud. The block and the stud clear; the board is empty.','Người chơi kéo khối xanh dương xuống 3 ô vào chốt xanh dương. Khối và chốt biến mất; bàn chơi trống.'),
        t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),dash,dash],
-      [t('Level complete','Hoàn thành màn'),t('The board slides away and the Level Complete popup opens: 50 coins, the element unlock progress bar at 0%, a Continue button. Tap Continue.','Bàn chơi trượt đi và popup Level Complete hiện: 50 xu, thanh tiến độ mở khóa yếu tố ở 0%, nút Continue. Chạm Continue.'),
+      [t('Level complete','Hoàn thành màn'),t('The board slides away and the Level Complete popup opens: 40 coins (<code>level_win_coin</code>), the element unlock progress bar at 0%, a Continue button. Tap Continue.','Bàn chơi trượt đi và popup Level Complete hiện: 40 xu (<code>level_win_coin</code>), thanh tiến độ mở khóa yếu tố ở 0%, nút Continue. Chạm Continue.'),
        t('Continue button','Nút Continue'),dash,dash]
     ],'wide steps-tbl')+
     `<div style="display:flex;flex-wrap:wrap;gap:16px">${demo('ftueRed')}${demo('ftueBlue')}${demo('ftueWin')}</div>`;
@@ -1393,7 +1393,7 @@ function view(l){
       `Values the team can change without releasing a new build.`,
       `Các thông số mà đội có thể chỉnh mà không cần phát hành bản game mới.`)}</p>`+
     rc(t('Level reward','Thưởng qua màn'),[
-      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'50',coin]
+      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin]
     ])+
     rc(t('Timer','Đồng hồ'),[
       ['revive_extra_time_seconds',t('Time added to the timer on each revive','Thời gian cộng vào đồng hồ mỗi lần hồi sinh'),'90',t('sec','giây')],
@@ -1563,8 +1563,7 @@ function view(l){
     day(t('9 November 2026','09/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
         t(`FTUE steps (2.2) rewritten from the screen recording: level 1 layout, red block then blue block, Level Complete popup.`,`Viết lại các bước FTUE (2.2) theo video: bố cục màn 1, kéo khối đỏ rồi khối xanh dương, popup Level Complete.`),
-        t(`3 animated demos added, one per step.`,`Thêm 3 minh họa động, mỗi bước một minh họa.`),
-        t(`<code>level_win_coin</code> 40 → 50, as in the recording.`,`<code>level_win_coin</code> 40 → 50, theo video.`)
+        t(`3 animated demos added, one per step. Level Complete pays 40 coins (<code>level_win_coin</code>), not the 50 shown in the recording.`,`Thêm 3 minh họa động, mỗi bước một minh họa. Level Complete thưởng 40 xu (<code>level_win_coin</code>), không phải 50 như trong video.`)
       ])))+
     day(t('8 November 2026','08/11/2026'),
       ent(nm('Boosters','Công cụ hỗ trợ'),ul([
