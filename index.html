@@ -478,7 +478,7 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const GAME='Jelly Block';
-const GBASE=40;  /* win-screen base coin reward, matches level_win_coin */
+const GBASE=50;  /* win-screen base coin reward, matches level_win_coin */
 const PID='jelly.block';
 
 /* crown-cap outline: a real bottle cap has 21 teeth */
@@ -643,7 +643,10 @@ function popScale(sel,t,base){const b=base||'';return [[sel,'transform',[[t,b+' 
 
 const DO={ox:16,oy:26,cs:28};   /* demo board origin: 6 columns × 5 rows */
 const DO4={ox:16,oy:40,cs:28};  /* demo board origin: 6 columns × 4 rows */
-const B65=[[0,0,6,5]],B64=[[0,0,6,4]];
+const B65=[[0,0,6,5]],B64=[[0,0,6,4]],B55=[[0,0,5,5]];
+const FO={ox:30,oy:30,cs:28};   /* FTUE demo board origin: 5 × 5, level 1 */
+/* tutorial hand: white glove pointing up, fingertip at (x,y) */
+function jhand(x,y){return `<path d="M${x-3} ${y}a3 3 0 0 1 6 0v9h6a4 4 0 0 1 4 4v7a8 8 0 0 1-8 8h-6a8 8 0 0 1-8-8v-9a3 3 0 0 1 6 0z" fill="#fff" stroke="#18203A" stroke-width="1.8" stroke-linejoin="round"/>`;}
 const DEMOS={
   /* ----- element demos ----- */
   arrow:{D:6.6, /* the arrow block shakes when pushed sideways, then slides down its axis onto the stud */
@@ -776,6 +779,41 @@ const DEMOS={
       ['.frzb0','opacity',[[0,0],[1.3,0],[1.5,1],[4.9,1],[5.2,0]]],
       ['.frzb','opacity',[[0,0],[1.3,0],[1.5,1],[4.9,1],[5.0,0]]],['.frzb','transform',[[1.5,'scaleX(1)','linear'],[4.9,'scaleX(0)']]],
       ['.tm','transform',[[5.2,'scale(1)'],[5.35,'scale(1.15)'],[5.6,'scale(1)']]]
+    ]},
+  /* ----- FTUE demos: level 1 from the reference recording (5 × 5 board) ----- */
+  ftueRed:{D:5.6, /* the hand drags the red block up until its hole sits on the red stud */
+    svg:()=>{const o=FO,[hx,hy]=cc(o,3,3);
+      return jboard(o,B55)+jstud(o,1,4,2)+`<g class="rs">${jstud(o,3,0,1)}</g>`+jblock(o,[[0,0],[1,0],[0,1],[1,1]],2,[1,1])+
+        `<g class="rb">${jblock(o,[[3,3],[4,3],[3,4],[4,4]],1,[3,3])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,3,0)[0],cc(o,3,0)[1]);},
+    tracks:()=>[
+      ['.hd','opacity',[[0,0],[.3,0],[.5,1],[2.4,1],[2.6,0]]],
+      ['.hd','transform',[[.5,T(0,6)],[.8,T(0,0)],[1.0,T(0,0)],[2.2,T(0,-84)]]],
+      ['.rb','transform',[[1.0,T(0,0)],[2.2,T(0,-84)],[2.5,T(0,-84)],[2.65,T(0,-84,1.1)],[2.9,T(0,-84,.2)]]],...popTracks('.rb',2.5),
+      ['.rs','transform',[[3.0,'scale(1)'],[3.15,'scale(1.3)'],[3.4,'scale(0)']]],
+      ...puffTracks(2.8)
+    ]},
+  ftueBlue:{D:5.6, /* the hand drags the blue block down onto the blue stud; the board is empty */
+    svg:()=>{const o=FO,[hx,hy]=cc(o,1,1);
+      return jboard(o,B55)+`<g class="bs">${jstud(o,1,4,2)}</g>`+
+        `<g class="bb">${jblock(o,[[0,0],[1,0],[0,1],[1,1]],2,[1,1])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,1,4)[0],cc(o,1,4)[1]);},
+    tracks:()=>[
+      ['.hd','opacity',[[0,0],[.3,0],[.5,1],[2.4,1],[2.6,0]]],
+      ['.hd','transform',[[.5,T(0,6)],[.8,T(0,0)],[1.0,T(0,0)],[2.2,T(0,84)]]],
+      ['.bb','transform',[[1.0,T(0,0)],[2.2,T(0,84)],[2.5,T(0,84)],[2.65,T(0,84,1.1)],[2.9,T(0,84,.2)]]],...popTracks('.bb',2.5),
+      ['.bs','transform',[[3.0,'scale(1)'],[3.15,'scale(1.3)'],[3.4,'scale(0)']]],
+      ...puffTracks(2.8)
+    ]},
+  ftueWin:{D:5.4, /* Level Complete popup: coin reward, element progress bar, Continue */
+    svg:()=>`<g class="pp"><rect x="22" y="22" width="156" height="160" rx="22" fill="${RIM}" stroke="#2C2F7A" stroke-width="3"/>`+
+      `<text class="bn sm" x="100" y="38" dy=".35em" style="font-size:14px;fill:var(--c4)">LEVEL COMPLETE!</text>`+
+      `<g class="cn">${[[86,80],[114,80],[100,70],[92,62],[108,62]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="12" fill="var(--c4)" stroke="#C98A00" stroke-width="2"/>`).join('')}`+
+      `<rect x="80" y="88" width="40" height="16" rx="8" fill="#2C2F7A"/><text class="bn sm" x="100" y="96" dy=".35em" style="font-size:12px">50</text></g>`+
+      `<rect x="38" y="112" width="124" height="14" rx="7" class="trackfill"/><rect x="38" y="108" width="20" height="20" rx="5" fill="var(--c2)" stroke="#fff" stroke-width="1.5"/><text class="bn sm" x="108" y="119" dy=".35em" style="font-size:10px">0%</text>`+
+      `<g class="cb"><rect x="56" y="140" width="88" height="28" rx="12" fill="var(--c3)" stroke="#fff" stroke-width="2"/><text class="bn sm" x="100" y="154" dy=".35em" style="font-size:13px">Continue</text></g></g>`,
+    tracks:()=>[
+      ['.pp','transform',[[.2,'scale(.6)'],[.6,'scale(1.04)'],[.8,'scale(1)']]],['.pp','opacity',[[0,0],[.2,0],[.45,1]]],
+      ['.cn','transform',[[.9,'scale(.5)'],[1.2,'scale(1.15)'],[1.4,'scale(1)']]],
+      ['.cb','transform',[[2.0,'scale(1)'],[2.3,'scale(1.08)'],[2.6,'scale(1)'],[3.2,'scale(1)'],[3.5,'scale(1.08)'],[3.8,'scale(1)']]]
     ]},
   hand:{D:5.8, /* tap a block: it is removed at once and the path opens */
     svg:()=>{const o=DO4;
@@ -1095,6 +1133,9 @@ function view(l){
     spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
     magnet:t('The player taps a red stud. Every red block and red stud flies into it and clears.','Người chơi chạm vào một núm đỏ. Mọi khối đỏ và núm đỏ bay vào núm đó và biến mất.'),
     timeFreeze:t('The player taps the booster. The timer freezes for 30 seconds, then counts down again.','Người chơi chạm vào công cụ. Đồng hồ dừng trong 30 giây, sau đó đếm ngược lại.'),
+    ftueRed:t('Step 1: the hand drags the red block up. Its hole lands on the red stud and both clear.','Bước 1: bàn tay kéo khối đỏ lên. Lỗ khớp vào chốt đỏ, khối và chốt cùng biến mất.'),
+    ftueBlue:t('Step 2: the hand drags the blue block down onto the blue stud. The board is empty.','Bước 2: bàn tay kéo khối xanh dương xuống chốt xanh dương. Bàn chơi trống.'),
+    ftueWin:t('Step 3: Level Complete with 50 coins, the progress bar at 0% and Continue.','Bước 3: Level Complete với 50 xu, thanh tiến độ 0% và nút Continue.'),
     hand:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
@@ -1217,18 +1258,22 @@ function view(l){
   ]);
 
   /* first and last rows follow the game's own FTUE table */
-  B['ftue-steps']=table(t('FTUE steps','Các bước FTUE'),
+  B['ftue-steps']=`<p class="sec-intro">${t(`Built from the FTUE screen recording (level 1). The board is 5 × 5 with 2 blocks of 2 × 2: blue at the top left (hole bottom right) and red at the bottom right (hole top left). The red stud is in the top row, the blue stud in the bottom row. Timer: 05:00.`,
+      `Dựng theo video FTUE (màn 1). Bàn chơi 5 × 5, có 2 khối 2 × 2: khối xanh dương ở góc trên trái (lỗ ở góc dưới phải) và khối đỏ ở góc dưới phải (lỗ ở góc trên trái). Chốt đỏ ở hàng trên cùng, chốt xanh dương ở hàng dưới cùng. Đồng hồ: 05:00.`)}</p>`+
+    table(t('FTUE steps','Các bước FTUE'),
     [t('Step','Bước'),t('Complete condition','Điều kiện hoàn thành'),t('Highlight','Phần được làm nổi bật'),t('Text box','Nội dung hộp thoại'),t('Progress save','Lưu tiến độ')],
     [
-      [t('Load the level','Tải màn chơi'),t('The game loads into level 1.','Trò chơi vào màn 1.'),dash,dash,dash],
+      [t('Load the level','Tải màn chơi'),t('The loading screen (logo, “Loading…”) ends and the game opens level 1 directly, no Home screen.','Màn hình tải (logo, “Loading…”) kết thúc và game vào thẳng màn 1, không qua màn hình chính.'),dash,dash,dash],
       [t('Terms &amp; Conditions / Privacy Policy','Điều khoản / Chính sách quyền riêng tư'),
-       t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư.'),dash,dash,t('Yes','Có')],
-      [t('Move the red block','Kéo khối đỏ'),t('The player moves the red block onto the red stud.','Người chơi kéo khối đỏ vào chốt đỏ.'),
-       t('A hand drags the red block toward the red stud.','Bàn tay kéo khối đỏ về phía chốt đỏ.'),dash,dash],
-      [t('Move the blue block','Kéo khối xanh dương'),t('The player moves the blue block onto the blue stud.','Người chơi kéo khối xanh dương vào chốt xanh dương.'),
-       t('A hand drags the blue block toward the blue stud.','Bàn tay kéo khối xanh dương về phía chốt xanh dương.'),dash,dash],
-      [t('Level complete','Hoàn thành màn'),t('Every block is cleared. Level 1 is complete.','Mọi khối đã được dọn. Hoàn thành màn 1.'),dash,dash,dash]
-    ],'wide steps-tbl');
+       t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy. Not shown in the recording.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư. Không có trong video.'),dash,dash,t('Yes','Có')],
+      [t('Move the red block','Kéo khối đỏ'),t('The player drags the red block up 3 cells until its hole sits on the red stud. The block clears, then the red stud clears.','Người chơi kéo khối đỏ lên 3 ô tới khi lỗ nằm đúng trên chốt đỏ. Khối biến mất, sau đó chốt đỏ biến mất.'),
+       t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),dash,dash],
+      [t('Move the blue block','Kéo khối xanh dương'),t('The player drags the blue block down 3 cells onto the blue stud. The block and the stud clear; the board is empty.','Người chơi kéo khối xanh dương xuống 3 ô vào chốt xanh dương. Khối và chốt biến mất; bàn chơi trống.'),
+       t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),dash,dash],
+      [t('Level complete','Hoàn thành màn'),t('The board slides away and the Level Complete popup opens: 50 coins, the element unlock progress bar at 0%, a Continue button. Tap Continue.','Bàn chơi trượt đi và popup Level Complete hiện: 50 xu, thanh tiến độ mở khóa yếu tố ở 0%, nút Continue. Chạm Continue.'),
+       t('Continue button','Nút Continue'),dash,dash]
+    ],'wide steps-tbl')+
+    `<div style="display:flex;flex-wrap:wrap;gap:16px">${demo('ftueRed')}${demo('ftueBlue')}${demo('ftueWin')}</div>`;
 
   /* one row per element, in unlock order */
   B['element-tutorial']=table(t('Element tutorial','Hướng dẫn yếu tố đặc biệt'),
@@ -1348,7 +1393,7 @@ function view(l){
       `Values the team can change without releasing a new build.`,
       `Các thông số mà đội có thể chỉnh mà không cần phát hành bản game mới.`)}</p>`+
     rc(t('Level reward','Thưởng qua màn'),[
-      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin]
+      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'50',coin]
     ])+
     rc(t('Timer','Đồng hồ'),[
       ['revive_extra_time_seconds',t('Time added to the timer on each revive','Thời gian cộng vào đồng hồ mỗi lần hồi sinh'),'90',t('sec','giây')],
@@ -1515,6 +1560,12 @@ function view(l){
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
+    day(t('9 November 2026','09/11/2026'),
+      ent(nm('FTUE','FTUE'),ul([
+        t(`FTUE steps (2.2) rewritten from the screen recording: level 1 layout, red block then blue block, Level Complete popup.`,`Viết lại các bước FTUE (2.2) theo video: bố cục màn 1, kéo khối đỏ rồi khối xanh dương, popup Level Complete.`),
+        t(`3 animated demos added, one per step.`,`Thêm 3 minh họa động, mỗi bước một minh họa.`),
+        t(`<code>level_win_coin</code> 40 → 50, as in the recording.`,`<code>level_win_coin</code> 40 → 50, theo video.`)
+      ])))+
     day(t('8 November 2026','08/11/2026'),
       ent(nm('Boosters','Công cụ hỗ trợ'),ul([
         t(`Booster 2 is now ${P.bo2}: the timer stops for 30 s. Extra Time (+30 s) is gone.`,`Công cụ 2 đổi thành ${P.bo2}: đồng hồ dừng trong 30 giây. Bỏ Extra Time (+30 giây).`),
