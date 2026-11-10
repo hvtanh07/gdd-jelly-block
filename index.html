@@ -1367,15 +1367,13 @@ function view(l){
     ['Purchase Complete','ui',t('An IAP purchase completes','Giao dịch IAP hoàn tất'),0],
     ['Block Pick','core',t('The player taps a block to pick it up','Người chơi chạm vào khối để nhấc lên'),1],
     ['Block Clear','core',t('A block snaps onto its stud and clears','Khối khớp vào chốt và biến mất'),2],
-    ['Stud Clear','core',t('Every round stud or every X stud of a color clears','Mọi chốt tròn hoặc mọi chốt chữ X của một màu biến mất'),null],
+    ['Stud Clear','core',t('Every round stud or every X stud of a color clears','Mọi chốt tròn hoặc mọi chốt chữ X của một màu biến mất'),2],
     ['Timer Warning','core',t('The timer is running out: a warning tick every second. Start time: TBD','Đồng hồ sắp hết giờ: tiếng tích cảnh báo mỗi giây. Thời điểm bắt đầu: TBD'),0],
     ['Hidden Reveal','el',t(`A ${P.el2} reaches 0 and shows its color`,`${P.el2} về 0 và hiện màu`),0],
     ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),0],
-    ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
+    ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),0],
     ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),0],
-    ['Hand','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
-    ['Time Freeze','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
-    ['Magnet','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
+    ['Time Freeze','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),0]
   ];
   B['sfx--haptics']=table(t('SFX and haptics','Âm thanh và rung'),
     [t('Name','Tên'),t('Category','Nhóm'),t('Plays when','Phát khi'),t('Haptic','Rung')],
@@ -1571,7 +1569,9 @@ function view(l){
       ]))+
       ent(nm('SFX & haptics','Âm thanh & rung'),ul([
         t(`Haptics set: Block Pick weak, Block Clear medium. Hidden Reveal, Ice Break (${P.el6} and ${P.el7}) and Spoon Unlock have no haptic.`,`Đặt mức rung: Block Pick rung nhẹ, Block Clear rung vừa. Hidden Reveal, Ice Break (${P.el6} và ${P.el7}) và Spoon Unlock không rung.`),
-        t(`New SFX: Timer Warning tick when time is running out, no haptic. Start time is TBD.`,`SFX mới: Timer Warning, tiếng tích khi sắp hết giờ, không rung. Thời điểm bắt đầu: TBD.`)
+        t(`New SFX: Timer Warning tick when time is running out, no haptic. Start time is TBD.`,`SFX mới: Timer Warning, tiếng tích khi sắp hết giờ, không rung. Thời điểm bắt đầu: TBD.`),
+        t(`Haptics set: Stud Clear medium. Link Break and Time Freeze have no haptic.`,`Đặt mức rung: Stud Clear rung vừa. Link Break và Time Freeze không rung.`),
+        t(`Removed the Hand and Magnet SFX: these boosters have no sound.`,`Bỏ SFX của Hand và Magnet: 2 công cụ này không có âm thanh.`)
       ])))+
     day(t('9 November 2026','09/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
