@@ -706,15 +706,16 @@ const DEMOS={
       ['.is','opacity',[[0,1],[3.9,1],[4.2,0]]],['.is','transform',[[3.9,'scale(1)'],[4.2,'scale(1.2)']]],
       ...puffTracks(5.1)
     ]},
-  xStud:{D:7.4, /* a round hole bumps against the X stud; the X-hole block fits and clears */
+  xStud:{D:7.4, /* a round hole bumps against the X stud; the X-hole block fits and clears, then the X stud clears on its own */
     svg:()=>{const o=DO;
-      return jboard(o,B65)+jstud(o,2,0,3,true)+jstud(o,5,4,1)+jblock(o,[[4,1],[5,1]],1,[4,1])+
+      return jboard(o,B65)+`<g class="xs">${jstud(o,2,0,3,true)}</g>`+jstud(o,5,4,1)+jblock(o,[[4,1],[5,1]],1,[4,1])+
         `<g class="rb">${jblock(o,[[2,2]],3,[2,2])}</g><g class="xb">${jblock(o,[[2,4]],3,[2,4,'x'])}</g>`+
         tap(cc(o,2,2)[0],cc(o,2,2)[1])+puff(cc(o,2,0)[0],cc(o,2,0)[1]);},
     tracks:()=>[
       ...tapTracks(.4),
       ['.rb','transform',[[.7,T(0,0)],[1.1,T(0,-24)],[1.25,T(0,-28)],[1.45,T(0,-28)],[1.7,T(0,0)],[2.2,T(0,0)],[2.7,T(28,0)]]],
       ['.xb','transform',[[3.1,T(0,0)],[4.0,T(0,-112)],[4.15,T(0,-112,1.12)],[4.4,T(0,-112,.2)]]],...popTracks('.xb',4.0),
+      ['.xs','transform',[[4.6,'scale(1)'],[4.75,'scale(1.3)'],[5.0,'scale(0)']]],
       ...puffTracks(4.3)
     ]},
   linked:{D:7.6, /* the linked pair moves as one; red clears, the link breaks, blue moves on alone */
@@ -1003,7 +1004,9 @@ function view(l){
       t(`Round peg fixed on a board cell. 8 colors, same as blocks.`,`Chốt tròn cố định trên một ô của bàn. 8 màu, giống màu khối.`),
       t(`Stud positions are set per level.`,`Vị trí chốt đặt theo từng màn.`),
       t(`A stud only accepts a block of its own color.`,`Chốt chỉ nhận khối cùng màu.`),
-      t(`When every block of a color is cleared, every stud of that color clears too.`,`Khi mọi khối của một màu đã được dọn, mọi chốt màu đó cũng biến mất.`)
+      t(`Round studs and ${P.el3}s of the same color clear separately.`,`Chốt tròn và ${P.el3} cùng màu biến mất riêng.`),
+      t(`When every round-hole block of a color is cleared, every round stud of that color clears.`,`Khi mọi khối lỗ tròn của một màu đã được dọn, mọi chốt tròn màu đó biến mất.`),
+      t(`When every X-hole block of a color is cleared, every ${P.el3} of that color clears, even if round-hole blocks of that color are still left.`,`Khi mọi khối lỗ chữ X của một màu đã được dọn, mọi ${P.el3} màu đó biến mất, kể cả khi còn khối lỗ tròn cùng màu.`)
     ]))+
     ent(nm('Board','Bàn chơi'),ul([
       t(`Grid of cells with walls around it. The shape is set per level.`,`Lưới ô có tường bao quanh. Hình dạng đặt theo từng màn.`),
@@ -1128,7 +1131,7 @@ function view(l){
     hiddenBlock:t('The grey block moves but cannot clear. Two blocks clear, the number hits 0, its color shows and it clears.','Khối xám di chuyển được nhưng không dọn được. Dọn 2 khối, con số về 0, khối hiện màu và được dọn.'),
     frozenBlock:t('The frozen block does not move. Two blocks clear, the ice breaks and it slides onto its stud.','Khối đóng băng không di chuyển. Dọn 2 khối, lớp băng vỡ và khối trượt vào chốt.'),
     frozenStud:t('The frozen stud stops the yellow block. Two blocks clear, the ice melts and the block fits.','Chốt đóng băng chặn khối vàng. Dọn 2 khối, băng tan và khối khớp vào chốt.'),
-    xStud:t('A round hole is blocked by the X stud. The X-hole block fits and clears.','Lỗ tròn bị chốt chữ X chặn lại. Khối có lỗ chữ X khớp vào và biến mất.'),
+    xStud:t('A round hole is blocked by the X stud. The X-hole block fits and clears, then the X stud clears even though a green round-hole block is left.','Lỗ tròn bị chốt chữ X chặn lại. Khối có lỗ chữ X khớp vào và biến mất, sau đó chốt chữ X biến mất dù vẫn còn khối xanh lá lỗ tròn.'),
     linked:t('The pair moves as one. Red clears, the link breaks, blue moves on alone.','Cặp khối di chuyển cùng nhau. Khối đỏ biến mất, liên kết gỡ, khối xanh đi tiếp một mình.'),
     spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
     magnet:t('The player taps a red stud. Every red block and red stud flies into it and clears.','Người chơi chạm vào một núm đỏ. Mọi khối đỏ và núm đỏ bay vào núm đó và biến mất.'),
@@ -1164,7 +1167,7 @@ function view(l){
       t(`A stud shaped like an X. Only fits a block with an X-shaped hole.`,`Chốt hình chữ X. Chỉ khớp với khối có lỗ hình chữ X.`),
       t(`The player must match both shape and color to clear the block.`,`Người chơi phải khớp cả hình dạng lẫn màu để dọn khối.`),
       t(`A block with a round hole is blocked by an X stud, like any stud it does not fit.`,`Khối có lỗ tròn bị chốt chữ X chặn lại, như mọi chốt không khớp khác.`),
-      t(`Clears with the rest of its color, like a normal stud.`,`Biến mất cùng các chốt cùng màu, như chốt thường.`)
+      t(`Clears on its own when every X-hole block of its color is cleared. It does not wait for round-hole blocks of that color.`,`Tự biến mất khi mọi khối lỗ chữ X cùng màu đã được dọn. Không đợi các khối lỗ tròn cùng màu.`)
     ]),unlock(17),demo('xStud'))+
     ent(N.el4,ul([
       t(`Blocks of different colors stuck together along their edges.`,`Các khối khác màu dính vào nhau theo cạnh.`),
@@ -1332,7 +1335,7 @@ function view(l){
     ]))+
     ent(nm('Stud','Chốt'),params([
       [t('Look','Hình ảnh'),t('Round colored peg with a white rim.','Chốt tròn có màu, viền trắng.')],
-      [anim(1),t('Last block of its color cleared: every stud of that color pops at once.','Khối cuối cùng của màu được dọn: mọi chốt màu đó cùng biến mất.')]
+      [anim(1),t('Last block of its color and hole shape cleared: every stud of that color and shape pops at once.','Khối cuối cùng cùng màu và cùng hình lỗ được dọn: mọi chốt cùng màu và cùng hình đó biến mất.')]
     ]));
 
   const an=t('Animation','Chuyển động'),look=t('Look','Hình ảnh');
@@ -1364,7 +1367,7 @@ function view(l){
     ['Purchase Complete','ui',t('An IAP purchase completes','Giao dịch IAP hoàn tất'),0],
     ['Block Pick','core',t('The player picks a block','Người chơi chọn một khối'),null],
     ['Block Clear','core',t('A block snaps onto its stud and clears','Khối khớp vào chốt và biến mất'),null],
-    ['Stud Clear','core',t('Every stud of a color clears','Mọi chốt của một màu biến mất'),null],
+    ['Stud Clear','core',t('Every round stud or every X stud of a color clears','Mọi chốt tròn hoặc mọi chốt chữ X của một màu biến mất'),null],
     ['Hidden Reveal','el',t(`A ${P.el2} reaches 0 and shows its color`,`${P.el2} về 0 và hiện màu`),null],
     ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),null],
     ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
@@ -1560,6 +1563,11 @@ function view(l){
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
+    day(t('10 November 2026','10/11/2026'),
+      ent(nm('Stud','Chốt'),ul([
+        t(`Round studs and ${P.el3}s of the same color now clear separately: each clears when every block with its hole shape and color is gone.`,`Chốt tròn và ${P.el3} cùng màu giờ biến mất riêng: mỗi loại biến mất khi mọi khối cùng màu và cùng hình lỗ đã được dọn.`),
+        t(`${P.el3} demo updated to show this.`,`Cập nhật minh họa ${P.el3} theo luật này.`)
+      ])))+
     day(t('9 November 2026','09/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
         t(`FTUE steps (2.2) rewritten from the screen recording: level 1 layout, red block then blue block, Level Complete popup.`,`Viết lại các bước FTUE (2.2) theo video: bố cục màn 1, kéo khối đỏ rồi khối xanh dương, popup Level Complete.`),
