@@ -1365,13 +1365,14 @@ function view(l){
     ['Coin Reward','ui',t('The player earns coins','Người chơi nhận xu'),0],
     ['Booster Reward','ui',t('The player earns a booster from a purchase','Người chơi nhận công cụ hỗ trợ từ giao dịch'),0],
     ['Purchase Complete','ui',t('An IAP purchase completes','Giao dịch IAP hoàn tất'),0],
-    ['Block Pick','core',t('The player picks a block','Người chơi chọn một khối'),null],
-    ['Block Clear','core',t('A block snaps onto its stud and clears','Khối khớp vào chốt và biến mất'),null],
+    ['Block Pick','core',t('The player taps a block to pick it up','Người chơi chạm vào khối để nhấc lên'),1],
+    ['Block Clear','core',t('A block snaps onto its stud and clears','Khối khớp vào chốt và biến mất'),2],
     ['Stud Clear','core',t('Every round stud or every X stud of a color clears','Mọi chốt tròn hoặc mọi chốt chữ X của một màu biến mất'),null],
-    ['Hidden Reveal','el',t(`A ${P.el2} reaches 0 and shows its color`,`${P.el2} về 0 và hiện màu`),null],
-    ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),null],
+    ['Timer Warning','core',t('The timer is running out: a warning tick every second. Start time: TBD','Đồng hồ sắp hết giờ: tiếng tích cảnh báo mỗi giây. Thời điểm bắt đầu: TBD'),0],
+    ['Hidden Reveal','el',t(`A ${P.el2} reaches 0 and shows its color`,`${P.el2} về 0 và hiện màu`),0],
+    ['Ice Break','el',t(`A ${P.el6} or ${P.el7} reaches 0 and the ice breaks`,`${P.el6} hoặc ${P.el7} về 0 và băng vỡ`),0],
     ['Link Break','el',t(`A ${P.el4} link breaks`,`Liên kết của ${P.el4} bị gỡ`),null],
-    ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),null],
+    ['Spoon Unlock','el',t('A spoon opens its locked hole','Thìa mở lỗ khóa cùng màu'),0],
     ['Hand','bo',t(`The player uses ${P.bo1}`,`Người chơi dùng ${P.bo1}`),null],
     ['Time Freeze','bo',t(`The player uses ${P.bo2}`,`Người chơi dùng ${P.bo2}`),null],
     ['Magnet','bo',t(`The player uses ${P.bo3}`,`Người chơi dùng ${P.bo3}`),null]
@@ -1567,6 +1568,10 @@ function view(l){
       ent(nm('Stud','Chốt'),ul([
         t(`Round studs and ${P.el3}s of the same color now clear separately: each clears when every block with its hole shape and color is gone.`,`Chốt tròn và ${P.el3} cùng màu giờ biến mất riêng: mỗi loại biến mất khi mọi khối cùng màu và cùng hình lỗ đã được dọn.`),
         t(`${P.el3} demo updated to show this.`,`Cập nhật minh họa ${P.el3} theo luật này.`)
+      ]))+
+      ent(nm('SFX & haptics','Âm thanh & rung'),ul([
+        t(`Haptics set: Block Pick weak, Block Clear medium. Hidden Reveal, Ice Break (${P.el6} and ${P.el7}) and Spoon Unlock have no haptic.`,`Đặt mức rung: Block Pick rung nhẹ, Block Clear rung vừa. Hidden Reveal, Ice Break (${P.el6} và ${P.el7}) và Spoon Unlock không rung.`),
+        t(`New SFX: Timer Warning tick when time is running out, no haptic. Start time is TBD.`,`SFX mới: Timer Warning, tiếng tích khi sắp hết giờ, không rung. Thời điểm bắt đầu: TBD.`)
       ])))+
     day(t('9 November 2026','09/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
