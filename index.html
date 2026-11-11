@@ -1255,8 +1255,8 @@ function view(l){
      t(`A box marks the only place the player can tap.`,
        `Khung sáng đánh dấu chỗ duy nhất được chạm.`)],
     [t('Progress save','Lưu tiến độ'),
-     t(`Saved steps are skipped if the player quits and comes back.`,
-       `Các bước đã lưu được bỏ qua khi người chơi thoát rồi vào lại.`)]
+     t(`Only steps marked “Yes” save progress. A saved step is skipped when the player quits and comes back. If the player quits during a step that does not save, all progress after the last saved step is lost: the player comes back to the first step after the last saved step and plays again from there.`,
+       `Chỉ các bước ghi “Có” mới lưu tiến độ. Bước đã lưu được bỏ qua khi người chơi thoát rồi vào lại. Nếu người chơi thoát ở bước không lưu, mọi tiến độ sau bước được lưu gần nhất sẽ mất: người chơi quay lại bước ngay sau bước được lưu gần nhất và chơi lại từ đó.`)]
   ]);
 
   /* first and last rows follow the game's own FTUE table */
@@ -1265,16 +1265,18 @@ function view(l){
     table(t('FTUE steps','Các bước FTUE'),
     [t('Step','Bước'),t('Complete condition','Điều kiện hoàn thành'),t('Highlight','Phần được làm nổi bật'),t('Text box','Nội dung hộp thoại'),t('Progress save','Lưu tiến độ')],
     [
-      [t('Load the level','Tải màn chơi'),t('The loading screen (logo, “Loading…”) ends and the game opens level 1 directly, no Home screen.','Màn hình tải (logo, “Loading…”) kết thúc và game vào thẳng màn 1, không qua màn hình chính.'),dash,dash,dash],
+      [t('Load the level','Tải màn chơi'),t('The loading screen (logo, “Loading…”) ends and the game opens level 1 directly, no Home screen.','Màn hình tải (logo, “Loading…”) kết thúc và game vào thẳng màn 1, không qua màn hình chính.'),dash,dash,t('No. Quit here: nothing is saved yet, the FTUE starts again from this step.','Không. Thoát ở đây: chưa có gì được lưu, FTUE chạy lại từ bước này.')],
       [t('Terms &amp; Conditions / Privacy Policy','Điều khoản / Chính sách quyền riêng tư'),
        t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy. Not shown in the recording.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư. Không có trong video.'),dash,dash,t('Yes','Có')],
       [t('Move the red block','Kéo khối đỏ'),t('The player drags the red block up 3 cells until its hole sits on the red stud. The block clears, then the red stud clears.','Người chơi kéo khối đỏ lên 3 ô tới khi lỗ nằm đúng trên chốt đỏ. Khối biến mất, sau đó chốt đỏ biến mất.'),
-       t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),t('“Drag the red BLOCK up to the red STUD!”','“Kéo KHỐI đỏ lên CHỐT đỏ!”'),dash],
+       t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),t('“Drag the red BLOCK up to the red STUD!”','“Kéo KHỐI đỏ lên CHỐT đỏ!”'),t('No. Quit here: back to Move the red block. Level 1 restarts.','Không. Thoát ở đây: quay lại bước Kéo khối đỏ. Màn 1 chơi lại từ đầu.')],
       [t('Move the blue block','Kéo khối xanh dương'),t('The player drags the blue block down 3 cells onto the blue stud. The block and the stud clear; the board is empty.','Người chơi kéo khối xanh dương xuống 3 ô vào chốt xanh dương. Khối và chốt biến mất; bàn chơi trống.'),
-       t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),t('“Drag the blue BLOCK down to the blue STUD!”','“Kéo KHỐI xanh dương xuống CHỐT xanh dương!”'),dash],
+       t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),t('“Drag the blue BLOCK down to the blue STUD!”','“Kéo KHỐI xanh dương xuống CHỐT xanh dương!”'),t('No. Quit here: back to Move the red block. Level 1 restarts, the red block must be moved again.','Không. Thoát ở đây: quay lại bước Kéo khối đỏ. Màn 1 chơi lại từ đầu, phải kéo lại khối đỏ.')],
       [t('Level complete','Hoàn thành màn'),t('The win screen appears.','Màn hình thắng xuất hiện.'),
-       t('Continue button','Nút Continue'),dash,dash]
+       t('Continue button','Nút Continue'),dash,t('No. Quit here: back to Move the red block. Level 1 restarts.','Không. Thoát ở đây: quay lại bước Kéo khối đỏ. Màn 1 chơi lại từ đầu.')]
     ],'wide steps-tbl')+
+    `<p class="sec-intro">${t(`<b>Progress save:</b> only Terms &amp; Conditions / Privacy Policy saves progress. Every other step does not save. If the player quits during a step that does not save, they replay from the step right after the last saved one. After Terms &amp; Conditions is saved, that step is Move the red block.`,
+      `<b>Lưu tiến độ:</b> chỉ bước Điều khoản / Chính sách quyền riêng tư lưu tiến độ. Các bước khác không lưu. Nếu người chơi thoát ở bước không lưu, họ chơi lại từ bước ngay sau bước được lưu gần nhất. Khi bước Điều khoản đã lưu, bước đó là Kéo khối đỏ.`)}</p>`+
     `<div style="display:flex;flex-wrap:wrap;gap:16px">${demo('ftueRed')}${demo('ftueBlue')}${demo('ftueWin')}</div>`;
 
   /* one row per element, in unlock order */
@@ -1564,6 +1566,7 @@ function view(l){
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
     day(t('11 November 2026','11/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
+        t(`Progress save made explicit: each step now says “Yes” or “No”. Quitting during a step that does not save sends the player back to the step after the last saved one.`,`Ghi rõ lưu tiến độ: mỗi bước ghi “Có” hoặc “Không”. Thoát ở bước không lưu thì người chơi quay lại bước ngay sau bước được lưu gần nhất.`),
         t(`Last step: only the win screen appears. The board and progress bar are no longer described.`,`Bước cuối: chỉ cần màn hình thắng xuất hiện. Bỏ mô tả bàn chơi và thanh tiến độ.`),
         t(`Text box added to the red block and blue block steps, in the table and in the demos. Wording taken from the game screens.`,`Thêm hộp thoại cho bước kéo khối đỏ và khối xanh dương, trong bảng và trong minh họa. Nội dung lấy theo màn hình game.`)
       ]))+
