@@ -749,18 +749,17 @@ const DEMOS={
       ...puffTracks(4.5)
     ]},
   /* ----- booster demos ----- */
-  magnet:{D:6.2, /* tap a red stud: every red block and red stud flies into it and clears */
+  magnet:{D:6.2, /* tap a red round stud: red round-hole blocks and red round studs fly into it and clear; red X stud and X-hole block stay */
     svg:()=>{const o=DO4,[mx,my]=cc(o,0,0);
       return jboard(o,B64)+jstud(o,5,1,2)+jstud(o,2,3,4)+jblock(o,[[2,1],[2,2]],2,[2,1])+jblock(o,[[4,2],[4,3]],4,[4,3])+
-        `<g class="m0">${jstud(o,0,0,1)}</g><g class="s1">${jstud(o,5,3,1)}</g>`+
-        `<g class="m1">${jblock(o,[[1,2]],1,[1,2])}</g><g class="m2">${jblock(o,[[3,0],[4,0]],1,[4,0])}</g>`+
+        `<g class="m0">${jstud(o,0,0,1)}</g><g class="s1">${jstud(o,5,3,1)}</g>${jstud(o,0,3,1,true)}`+
+        `<g class="m1">${jblock(o,[[1,2]],1,[1,2])}</g>${jblock(o,[[3,0],[4,0]],1,[4,0,'x'])}`+
         `<g class="mg" style="opacity:0"><path d="M${mx-9} ${my-24}v8a9 9 0 0 0 18 0v-8" fill="none" stroke="var(--c1)" stroke-width="6"/><rect x="${mx-12}" y="${my-27}" width="7" height="5" fill="#fff"/><rect x="${mx+5}" y="${my-27}" width="7" height="5" fill="#fff"/></g>`+
         tap(mx,my)+puff(mx,my);},
     tracks:()=>[
       ...tapTracks(.5),
       ['.mg','opacity',[[0,0],[.8,0],[1.0,1],[2.6,1],[2.8,0]]],['.mg','transform',[[.8,T(0,6)],[1.0,T(0,0)],[1.3,T(0,-2)],[1.6,T(0,0)]]],
       ['.m1','transform',[[1.2,T(0,0)],[2.0,T(-28,-56,.3)]]],['.m1','opacity',[[0,1],[1.9,1],[2.0,0]]],
-      ['.m2','transform',[[1.3,T(0,0)],[2.1,T(-98,0,.3)]]],['.m2','opacity',[[0,1],[2.0,1],[2.1,0]]],
       ['.s1','transform',[[1.4,T(0,0)],[2.2,T(-140,-84,.3)]]],['.s1','opacity',[[0,1],[2.1,1],[2.2,0]]],
       ['.m0','transform',[[2.2,'scale(1)'],[2.35,'scale(1.25)'],[2.6,'scale(.2)']]],['.m0','opacity',[[0,1],[2.5,1],[2.6,0]]],
       ...puffTracks(2.45)
@@ -804,13 +803,12 @@ const DEMOS={
       ['.bs','transform',[[3.0,'scale(1)'],[3.15,'scale(1.3)'],[3.4,'scale(0)']]],
       ...puffTracks(2.8)
     ]},
-  ftueWin:{D:5.4, /* Level Complete popup: coin reward, element progress bar, Continue */
+  ftueWin:{D:5.4, /* the win screen appears */
     svg:()=>`<g class="pp"><rect x="22" y="22" width="156" height="160" rx="22" fill="${RIM}" stroke="#2C2F7A" stroke-width="3"/>`+
       `<text class="bn sm" x="100" y="38" dy=".35em" style="font-size:14px;fill:var(--c4)">LEVEL COMPLETE!</text>`+
       `<g class="cn">${[[86,80],[114,80],[100,70],[92,62],[108,62]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="12" fill="var(--c4)" stroke="#C98A00" stroke-width="2"/>`).join('')}`+
       `<rect x="80" y="88" width="40" height="16" rx="8" fill="#2C2F7A"/><text class="bn sm" x="100" y="96" dy=".35em" style="font-size:12px">40</text></g>`+
-      `<rect x="38" y="112" width="124" height="14" rx="7" class="trackfill"/><rect x="38" y="108" width="20" height="20" rx="5" fill="var(--c2)" stroke="#fff" stroke-width="1.5"/><text class="bn sm" x="108" y="119" dy=".35em" style="font-size:10px">0%</text>`+
-      `<g class="cb"><rect x="56" y="140" width="88" height="28" rx="12" fill="var(--c3)" stroke="#fff" stroke-width="2"/><text class="bn sm" x="100" y="154" dy=".35em" style="font-size:13px">Continue</text></g></g>`,
+            `<g class="cb"><rect x="56" y="140" width="88" height="28" rx="12" fill="var(--c3)" stroke="#fff" stroke-width="2"/><text class="bn sm" x="100" y="154" dy=".35em" style="font-size:13px">Continue</text></g></g>`,
     tracks:()=>[
       ['.pp','transform',[[.2,'scale(.6)'],[.6,'scale(1.04)'],[.8,'scale(1)']]],['.pp','opacity',[[0,0],[.2,0],[.45,1]]],
       ['.cn','transform',[[.9,'scale(.5)'],[1.2,'scale(1.15)'],[1.4,'scale(1)']]],
@@ -1134,11 +1132,11 @@ function view(l){
     xStud:t('A round hole is blocked by the X stud. The X-hole block fits and clears, then the X stud clears even though a green round-hole block is left.','Lỗ tròn bị chốt chữ X chặn lại. Khối có lỗ chữ X khớp vào và biến mất, sau đó chốt chữ X biến mất dù vẫn còn khối xanh lá lỗ tròn.'),
     linked:t('The pair moves as one. Red clears, the link breaks, blue moves on alone.','Cặp khối di chuyển cùng nhau. Khối đỏ biến mất, liên kết gỡ, khối xanh đi tiếp một mình.'),
     spoon:t('The block with the spoon clears. The spoon flies to the green locked hole and opens it.','Khối chứa thìa biến mất. Thìa bay tới lỗ khóa màu xanh lá và mở khóa.'),
-    magnet:t('The player taps a red stud. Every red block and red stud flies into it and clears.','Người chơi chạm vào một núm đỏ. Mọi khối đỏ và núm đỏ bay vào núm đó và biến mất.'),
+    magnet:t('The player taps a red round stud. Red round-hole blocks and red round studs fly into it and clear. The red X stud and the red X-hole block stay.','Người chơi chạm vào một núm tròn đỏ. Khối đỏ lỗ tròn và núm tròn đỏ bay vào núm đó và biến mất. Núm chữ X đỏ và khối đỏ lỗ chữ X vẫn ở lại.'),
     timeFreeze:t('The player taps the booster. The timer freezes for 30 seconds, then counts down again.','Người chơi chạm vào công cụ. Đồng hồ dừng trong 30 giây, sau đó đếm ngược lại.'),
     ftueRed:t('Step 1: the hand drags the red block up. Its hole lands on the red stud and both clear.','Bước 1: bàn tay kéo khối đỏ lên. Lỗ khớp vào chốt đỏ, khối và chốt cùng biến mất.'),
     ftueBlue:t('Step 2: the hand drags the blue block down onto the blue stud. The board is empty.','Bước 2: bàn tay kéo khối xanh dương xuống chốt xanh dương. Bàn chơi trống.'),
-    ftueWin:t('Step 3: Level Complete with 40 coins, the progress bar at 0% and Continue.','Bước 3: Level Complete với 40 xu, thanh tiến độ 0% và nút Continue.'),
+    ftueWin:t('Step 3: the win screen appears.','Bước 3: màn hình thắng xuất hiện.'),
     hand:t('The player taps the red block. It is removed at once, and the blue block can reach its stud.','Người chơi chạm vào khối đỏ. Khối bị xóa ngay, khối xanh dương đi tới chốt của nó.')
   };
   /* demo(key) shows DEMOS[key] with its DCAP caption; pass a caption as the second argument to override it */
@@ -1226,9 +1224,10 @@ function view(l){
     ]),unlockB(5),demo('timeFreeze'))+
     ent(N.bo3,ul([
       t(`The player taps a stud.`,`Người chơi chạm vào một núm.`),
-      t(`Every stud and every block of that stud’s color clears from the level at once.`,`Mọi núm và mọi khối cùng màu với núm đó biến mất khỏi màn ngay.`),
+      t(`Every stud and every block with the same color and the same shape as that stud clears from the level at once. Shape means round or X: a round stud clears round studs and round-hole blocks; an X stud clears X studs and X-hole blocks.`,`Mọi núm và mọi khối cùng màu và cùng hình với núm đó biến mất khỏi màn ngay. Hình là tròn hoặc chữ X: núm tròn dọn núm tròn và khối lỗ tròn; núm chữ X dọn núm chữ X và khối lỗ chữ X.`),
+      t(`Studs and blocks of the same color but the other shape stay.`,`Núm và khối cùng màu nhưng khác hình vẫn ở lại.`),
       withEl+':'+ul([
-        t(`${P.el3} and blocks with an X-shaped hole of that color clear too.`,`${P.el3} và khối có lỗ chữ X cùng màu cũng biến mất.`),
+        t(`Tapping a ${P.el3} clears every ${P.el3} and every X-hole block of that color.`,`Chạm vào ${P.el3} sẽ dọn mọi ${P.el3} và mọi khối lỗ chữ X cùng màu.`),
         t(`${P.el4}: blocks of that color leave their group. Links break as when a block clears.`,`${P.el4}: các khối cùng màu rời khỏi nhóm. Liên kết gỡ như khi một khối được dọn.`),
         t(`${P.el5}: spoons on the cleared blocks activate at once.`,`${P.el5}: thìa trên các khối bị dọn kích hoạt ngay.`),
         t(`${P.el2} (color still hidden), ${P.el6}, ${P.el7}: ${tbd}.`,`${P.el2} (chưa hiện màu), ${P.el6}, ${P.el7}: ${tbd}.`),
@@ -1273,7 +1272,7 @@ function view(l){
        t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),dash,dash],
       [t('Move the blue block','Kéo khối xanh dương'),t('The player drags the blue block down 3 cells onto the blue stud. The block and the stud clear; the board is empty.','Người chơi kéo khối xanh dương xuống 3 ô vào chốt xanh dương. Khối và chốt biến mất; bàn chơi trống.'),
        t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),dash,dash],
-      [t('Level complete','Hoàn thành màn'),t('The board slides away and the Level Complete popup opens: 40 coins (<code>level_win_coin</code>), the element unlock progress bar at 0%, a Continue button. Tap Continue.','Bàn chơi trượt đi và popup Level Complete hiện: 40 xu (<code>level_win_coin</code>), thanh tiến độ mở khóa yếu tố ở 0%, nút Continue. Chạm Continue.'),
+      [t('Level complete','Hoàn thành màn'),t('The win screen appears.','Màn hình thắng xuất hiện.'),
        t('Continue button','Nút Continue'),dash,dash]
     ],'wide steps-tbl')+
     `<div style="display:flex;flex-wrap:wrap;gap:16px">${demo('ftueRed')}${demo('ftueBlue')}${demo('ftueWin')}</div>`;
@@ -1297,7 +1296,7 @@ function view(l){
     [
       [N.bo1,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(3),lvl(3)],
       [N.bo2,popup('Freeze the timer for 30s!','Dừng đồng hồ trong 30 giây!'),lvl(5),lvl(3)],
-      [N.bo3,popup('Clear a whole color!','Dọn sạch một màu!'),lvl(10),lvl(3)]
+      [N.bo3,popup('Clear one color and shape!','Dọn sạch một màu, cùng hình!'),lvl(10),lvl(3)]
     ]);
 
   /* every element and booster with its unlock level, sorted by level */
@@ -1351,7 +1350,7 @@ function view(l){
   B['booster-object-concept']=
     ent(N.bo1,params([[an,t('A hand taps the block; it bursts into a puff and disappears.','Bàn tay chạm vào khối; khối vỡ thành làn khói và biến mất.')]]))+
     ent(N.bo2,params([[an,t('Ice covers the timer and a bar under it drains over 30 s. Then the ice breaks and the timer runs again.','Băng phủ lên đồng hồ, thanh bên dưới giảm dần trong 30 giây. Sau đó băng vỡ và đồng hồ chạy lại.')]]))+
-    ent(N.bo3,params([[an,t('A magnet appears over the tapped stud. Blocks and studs of that color fly into it and pop.','Nam châm hiện trên núm được chạm. Khối và núm cùng màu bay vào rồi biến mất.')]]));
+    ent(N.bo3,params([[an,t('A magnet appears over the tapped stud. Blocks and studs of that color and shape fly into it and pop.','Nam châm hiện trên núm được chạm. Khối và núm cùng màu, cùng hình bay vào rồi biến mất.')]]));
 
   /* ===== 4. SFX & haptics ===== */
   /* FIXED: the UI rows are the same in every project. Haptic: 0 none, 1 weak, 2 medium, 3 strong, null TBD */
@@ -1562,6 +1561,14 @@ function view(l){
   /* Add one day() block per day, newest first, with one ent per area changed */
   const day=(title,body)=>`<div class="sub"><h3><span>${title}</span></h3>${body}</div>`;
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
+    day(t('11 November 2026','11/11/2026'),
+      ent(nm('FTUE','FTUE'),ul([
+        t(`Last step: only the win screen appears. The board and progress bar are no longer described.`,`Bước cuối: chỉ cần màn hình thắng xuất hiện. Bỏ mô tả bàn chơi và thanh tiến độ.`)
+      ]))+
+      ent(N.bo3,ul([
+        t(`${P.bo3} now clears only studs and blocks with the same color and the same shape (round or X) as the tapped stud.`,`${P.bo3} giờ chỉ dọn núm và khối cùng màu và cùng hình (tròn hoặc chữ X) với núm được chạm.`),
+        t(`Demo, object animation and tutorial popup text updated.`,`Cập nhật minh họa, mô tả anim và nội dung popup hướng dẫn.`)
+      ])))+
     day(t('10 November 2026','10/11/2026'),
       ent(nm('Stud','Chốt'),ul([
         t(`Round studs and ${P.el3}s of the same color now clear separately: each clears when every block with its hole shape and color is gone.`,`Chốt tròn và ${P.el3} cùng màu giờ biến mất riêng: mỗi loại biến mất khi mọi khối cùng màu và cùng hình lỗ đã được dọn.`),
