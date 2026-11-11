@@ -1394,7 +1394,8 @@ function view(l){
       `Values the team can change without releasing a new build.`,
       `Các thông số mà đội có thể chỉnh mà không cần phát hành bản game mới.`)}</p>`+
     rc(t('Level reward','Thưởng qua màn'),[
-      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin]
+      ['level_win_coin',t('Coins for completing a level','Số xu nhận khi hoàn thành màn'),'40',coin],
+      ['coin_per_hard_level',t('Coins for completing a hard level','Số xu nhận khi hoàn thành màn khó (hard level)'),'60',coin]
     ])+
     rc(t('Timer','Đồng hồ'),[
       ['revive_extra_time_seconds',t('Time added to the timer on each revive','Thời gian cộng vào đồng hồ mỗi lần hồi sinh'),'90',t('sec','giây')],
@@ -1568,6 +1569,9 @@ function view(l){
       ent(N.bo3,ul([
         t(`${P.bo3} now clears only studs and blocks with the same color and the same shape (round or X) as the tapped stud.`,`${P.bo3} giờ chỉ dọn núm và khối cùng màu và cùng hình (tròn hoặc chữ X) với núm được chạm.`),
         t(`Demo, object animation and tutorial popup text updated.`,`Cập nhật minh họa, mô tả anim và nội dung popup hướng dẫn.`)
+      ]))+
+      ent(nm('Remote config','Remote config'),ul([
+        t(`New key <code>coin_per_hard_level</code> = 60: coins for completing a hard level.`,`Thêm key <code>coin_per_hard_level</code> = 60: số xu nhận khi hoàn thành màn khó.`)
       ])))+
     day(t('10 November 2026','10/11/2026'),
       ent(nm('Stud','Chốt'),ul([
