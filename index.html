@@ -1298,7 +1298,7 @@ function view(l){
     [
       [N.bo1,popup('Remove any block!','Xóa khối bất kỳ!'),lvl(3),lvl(3)],
       [N.bo2,popup('Freeze the timer for 30s!','Dừng đồng hồ trong 30 giây!'),lvl(5),lvl(3)],
-      [N.bo3,popup('Remove all studs of the same color &amp; shape!','Xóa mọi núm cùng màu &amp; cùng hình!'),lvl(10),lvl(3)]
+      [N.bo3,popup('Remove all studs &amp; blocks<br>of the same color &amp; shape!','Xóa mọi núm &amp; khối<br>cùng màu &amp; cùng hình!'),lvl(10),lvl(3)]
     ]);
 
   /* every element and booster with its unlock level, sorted by level */
@@ -1571,7 +1571,7 @@ function view(l){
         t(`Text box added to the red block and blue block steps, in the table and in the demos. Wording taken from the game screens.`,`Thêm hộp thoại cho bước kéo khối đỏ và khối xanh dương, trong bảng và trong minh họa. Nội dung lấy theo màn hình game.`)
       ]))+
       ent(N.bo3,ul([
-        t(`Tutorial popup text made clearer: “Remove all studs of the same color &amp; shape!”`,`Nội dung popup hướng dẫn rõ nghĩa hơn: “Xóa mọi núm cùng màu &amp; cùng hình!”`),
+        t(`Tutorial popup text made clearer: “Remove all studs &amp; blocks of the same color &amp; shape!” (2 lines)`,`Nội dung popup hướng dẫn rõ nghĩa hơn: “Xóa mọi núm &amp; khối cùng màu &amp; cùng hình!” (2 dòng)`),
         t(`${P.bo3} now clears only studs and blocks with the same color and the same shape (round or X) as the tapped stud.`,`${P.bo3} giờ chỉ dọn núm và khối cùng màu và cùng hình (tròn hoặc chữ X) với núm được chạm.`),
         t(`Demo, object animation and tutorial popup text updated.`,`Cập nhật minh họa, mô tả anim và nội dung popup hướng dẫn.`)
       ]))+
