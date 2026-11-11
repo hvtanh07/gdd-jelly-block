@@ -784,7 +784,7 @@ const DEMOS={
   ftueRed:{D:5.6, /* the hand drags the red block up until its hole sits on the red stud */
     svg:()=>{const o=FO,[hx,hy]=cc(o,3,3);
       return jboard(o,B55)+jstud(o,1,4,2)+`<g class="rs">${jstud(o,3,0,1)}</g>`+jblock(o,[[0,0],[1,0],[0,1],[1,1]],2,[1,1])+
-        `<g class="rb">${jblock(o,[[3,3],[4,3],[3,4],[4,4]],1,[3,3])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,3,0)[0],cc(o,3,0)[1]);},
+        `<g class="rb">${jblock(o,[[3,3],[4,3],[3,4],[4,4]],1,[3,3])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,3,0)[0],cc(o,3,0)[1])+`<g class="tb"><rect x="22" y="3" width="156" height="19" rx="8" fill="#fff" stroke="#2C2F7A" stroke-width="2"/><text class="bn sm" x="100" y="12.5" dy=".35em" style="font-size:10px;fill:#2C2F7A">Drag the block onto its stud!</text></g>`;},
     tracks:()=>[
       ['.hd','opacity',[[0,0],[.3,0],[.5,1],[2.4,1],[2.6,0]]],
       ['.hd','transform',[[.5,T(0,6)],[.8,T(0,0)],[1.0,T(0,0)],[2.2,T(0,-84)]]],
@@ -795,7 +795,7 @@ const DEMOS={
   ftueBlue:{D:5.6, /* the hand drags the blue block down onto the blue stud; the board is empty */
     svg:()=>{const o=FO,[hx,hy]=cc(o,1,1);
       return jboard(o,B55)+`<g class="bs">${jstud(o,1,4,2)}</g>`+
-        `<g class="bb">${jblock(o,[[0,0],[1,0],[0,1],[1,1]],2,[1,1])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,1,4)[0],cc(o,1,4)[1]);},
+        `<g class="bb">${jblock(o,[[0,0],[1,0],[0,1],[1,1]],2,[1,1])}</g>`+`<g class="hd">${jhand(hx,hy)}</g>`+puff(cc(o,1,4)[0],cc(o,1,4)[1])+`<g class="tb"><rect x="22" y="3" width="156" height="19" rx="8" fill="#fff" stroke="#2C2F7A" stroke-width="2"/><text class="bn sm" x="100" y="12.5" dy=".35em" style="font-size:10px;fill:#2C2F7A">Great! Now the blue one!</text></g>`;},
     tracks:()=>[
       ['.hd','opacity',[[0,0],[.3,0],[.5,1],[2.4,1],[2.6,0]]],
       ['.hd','transform',[[.5,T(0,6)],[.8,T(0,0)],[1.0,T(0,0)],[2.2,T(0,84)]]],
@@ -1269,9 +1269,9 @@ function view(l){
       [t('Terms &amp; Conditions / Privacy Policy','Điều khoản / Chính sách quyền riêng tư'),
        t('The player taps to agree to the Terms &amp; Conditions / Privacy Policy. Not shown in the recording.','Người chơi chạm đồng ý với Điều khoản / Chính sách quyền riêng tư. Không có trong video.'),dash,dash,t('Yes','Có')],
       [t('Move the red block','Kéo khối đỏ'),t('The player drags the red block up 3 cells until its hole sits on the red stud. The block clears, then the red stud clears.','Người chơi kéo khối đỏ lên 3 ô tới khi lỗ nằm đúng trên chốt đỏ. Khối biến mất, sau đó chốt đỏ biến mất.'),
-       t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),dash,dash],
+       t('A hand sits on the red block and drags it up to the red stud, on a loop. Only the red block can be moved.','Bàn tay đặt lên khối đỏ và kéo lên chốt đỏ, lặp lại. Chỉ kéo được khối đỏ.'),t('“Drag the block onto its stud!”','“Kéo khối vào chốt cùng màu!”'),dash],
       [t('Move the blue block','Kéo khối xanh dương'),t('The player drags the blue block down 3 cells onto the blue stud. The block and the stud clear; the board is empty.','Người chơi kéo khối xanh dương xuống 3 ô vào chốt xanh dương. Khối và chốt biến mất; bàn chơi trống.'),
-       t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),dash,dash],
+       t('A hand sits on the blue block and drags it down to the blue stud, on a loop.','Bàn tay đặt lên khối xanh dương và kéo xuống chốt xanh dương, lặp lại.'),t('“Great! Now the blue one!”','“Tốt lắm! Giờ tới khối xanh dương!”'),dash],
       [t('Level complete','Hoàn thành màn'),t('The win screen appears.','Màn hình thắng xuất hiện.'),
        t('Continue button','Nút Continue'),dash,dash]
     ],'wide steps-tbl')+
@@ -1564,7 +1564,8 @@ function view(l){
   B['change-note']=`<p class="sec-intro">${t('Changes made to this GDD, newest day first.','Các thay đổi của tài liệu này, ngày mới nhất ở trên cùng.')}</p>`+
     day(t('11 November 2026','11/11/2026'),
       ent(nm('FTUE','FTUE'),ul([
-        t(`Last step: only the win screen appears. The board and progress bar are no longer described.`,`Bước cuối: chỉ cần màn hình thắng xuất hiện. Bỏ mô tả bàn chơi và thanh tiến độ.`)
+        t(`Last step: only the win screen appears. The board and progress bar are no longer described.`,`Bước cuối: chỉ cần màn hình thắng xuất hiện. Bỏ mô tả bàn chơi và thanh tiến độ.`),
+        t(`Text box added to the red block and blue block steps, in the table and in the demos.`,`Thêm hộp thoại cho bước kéo khối đỏ và khối xanh dương, trong bảng và trong minh họa.`)
       ]))+
       ent(N.bo3,ul([
         t(`${P.bo3} now clears only studs and blocks with the same color and the same shape (round or X) as the tapped stud.`,`${P.bo3} giờ chỉ dọn núm và khối cùng màu và cùng hình (tròn hoặc chữ X) với núm được chạm.`),
